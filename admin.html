@@ -98,7 +98,7 @@
 <body>
 
     <div id="adminLoginOverlay">
-        <div class="login-card">
+        <div class="login-card" id="loginCard" style="display: none;">
             <h2 style="font-family: 'Orbitron', sans-serif; color: var(--accent-primary);">RESTRICTED</h2>
             <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 0.8rem;">ADMIN AUTHORIZATION REQUIRED</p>
             <div class="input-group">
@@ -112,7 +112,15 @@
             <button onclick="handleLogin()" class="btn btn-primary" id="loginBtn">Authorize Desk</button>
             <p id="loginError" style="color: var(--error); font-size: 0.8rem; margin-top: 15px; display: none;"></p>
         </div>
+        <div id="authLoader" style="text-align: center;">
+            <div style="width: 40px; height: 40px; border: 4px solid var(--accent-primary); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; letter-spacing: 2px;">VERIFYING CREDENTIALS...</p>
+        </div>
     </div>
+
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 
     <div class="dashboard-container" id="dashboard">
         <header class="dashboard-header">
@@ -202,8 +210,37 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const loginOverlay = document.getElementById('adminLoginOverlay');
+        const loginCard = document.getElementById('loginCard');
+        const authLoader = document.getElementById('authLoader');
         const dashboard = document.getElementById('dashboard');
         let currentScans = [];
+
+        async function checkSession() {
+            try {
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                
+                if (session) {
+                    const { data: profile, error: profError } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', session.user.id)
+                        .single();
+                    
+                    if (!profError && profile && (profile.role || '').toLowerCase() === 'admin') {
+                        initDashboard();
+                        return;
+                    }
+                }
+                
+                // If no session or not admin, show login card
+                authLoader.style.display = 'none';
+                loginCard.style.display = 'block';
+            } catch (e) {
+                console.error("Session check failed:", e);
+                authLoader.style.display = 'none';
+                loginCard.style.display = 'block';
+            }
+        }
 
         async function handleLogin() {
             const email = document.getElementById('adminEmail').value;
@@ -211,7 +248,13 @@
             const btn = document.getElementById('loginBtn');
             const err = document.getElementById('loginError');
 
-            btn.innerText = "AUTHENTICATING...";
+            if (!email || !pass) {
+                err.innerText = "Please enter both credentials.";
+                err.style.display = "block";
+                return;
+            }
+
+            btn.innerText = "AUTHORIZING...";
             btn.disabled = true;
             err.style.display = "none";
 
@@ -219,15 +262,13 @@
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
                 if (error) throw error;
 
-                // Check role (Case insensitive check)
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
                 if (!profile || (profile.role || '').toLowerCase() !== 'admin') {
                     await supabase.auth.signOut();
-                    throw new Error("ACCESS DENIED: Administrator clearance required.");
+                    throw new Error("ACCESS DENIED: Administrator role required.");
                 }
 
-                showToast("Access Granted. Loading Command Desk...", "success");
-                sessionStorage.setItem('admin_session', 'true');
+                showToast("Access Granted.", "success");
                 initDashboard();
             } catch (e) {
                 err.innerText = e.message;
@@ -245,18 +286,20 @@
         }
 
         async function fetchStats() {
-            const { data: scans } = await supabase.from('scans').select('*');
-            const { data: profiles } = await supabase.from('profiles').select('id');
+            try {
+                const { data: scans } = await supabase.from('scans').select('*');
+                const { data: profiles } = await supabase.from('profiles').select('id');
 
-            if (scans) {
-                document.getElementById('statTotal').innerText = scans.length;
-                const matches = scans.filter(s => s.result === 'MATCH').length;
-                const accuracy = scans.length > 0 ? ((matches / scans.length) * 100).toFixed(1) : 0;
-                document.getElementById('statAccuracy').innerText = accuracy + '%';
-            }
-            if (profiles) {
-                document.getElementById('statUsers').innerText = profiles.length;
-            }
+                if (scans) {
+                    document.getElementById('statTotal').innerText = scans.length;
+                    const matches = scans.filter(s => s.result === 'MATCH').length;
+                    const accuracy = scans.length > 0 ? ((matches / scans.length) * 100).toFixed(1) : 0;
+                    document.getElementById('statAccuracy').innerText = accuracy + '%';
+                }
+                if (profiles) {
+                    document.getElementById('statUsers').innerText = profiles.length;
+                }
+            } catch (e) { console.error("Stats fetch error:", e); }
         }
 
         async function fetchScans() {
@@ -295,15 +338,14 @@
             const btn = document.getElementById('addUserBtn');
 
             if (!email || !password || !full_name) {
-                showToast("Please fill all user details", "error");
+                showToast("Fill all blanks", "error");
                 return;
             }
 
-            btn.innerText = "Provisions in progress...";
+            btn.innerText = "PROVISIONING...";
             btn.disabled = true;
 
             try {
-                // 1. Sign up user in Auth
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -312,15 +354,13 @@
 
                 if (error) throw error;
 
-                // 2. Insert into profiles table
-                // Note: In a real app, a trigger should handle this, but we'll do it manually for this setup
                 const { error: profError } = await supabase.from('profiles').insert([
                     { id: data.user.id, username: email.split('@')[0], full_name, email, role }
                 ]);
 
                 if (profError) throw profError;
 
-                showToast("User successfully provisioned!", "success");
+                showToast("Staff Member Added!", "success");
                 document.getElementById('newUserFull').value = '';
                 document.getElementById('newUserEmail').value = '';
                 document.getElementById('newUserPass').value = '';
@@ -334,9 +374,9 @@
         }
 
         function handleLogout() {
-            supabase.auth.signOut();
-            sessionStorage.removeItem('admin_session');
-            window.location.reload();
+            supabase.auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
         }
 
         function exportCSV() {
@@ -362,24 +402,9 @@
             setTimeout(() => toast.style.display = "none", 3000);
         }
 
-        // Auto-check session
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-                if (profile && (profile.role || '').toLowerCase() === 'admin') {
-                    sessionStorage.setItem('admin_session', 'true');
-                    initDashboard();
-                    return;
-                }
-            }
-            // Traditional session fallback
-            if (sessionStorage.getItem('admin_session')) {
-                initDashboard();
-            }
-        }
-
+        // Start session check on load
         checkSession();
+    </script>
     </script>
 </body>
 </html>
