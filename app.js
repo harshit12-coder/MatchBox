@@ -43,7 +43,6 @@
   // Settings DOM
   const settingsModal = document.getElementById("settingsModal");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
-  const serverUrlInput = document.getElementById("serverUrlInput");
   const saveSettingsBtn = document.getElementById("saveSettingsBtn");
   const syncStatus = document.getElementById("syncStatus");
   const smartScanBtn = document.getElementById("smartScanBtn");
@@ -132,7 +131,6 @@
       updateAdminButton(); 
     }
 
-    serverUrlInput.value = serverUrl;
     renderStats();
     renderHistory();
     setupListeners();
@@ -337,13 +335,7 @@
     });
 
     saveSettingsBtn.addEventListener("click", () => {
-      serverUrl = serverUrlInput.value.trim();
-      if (serverUrl && !serverUrl.startsWith("http")) {
-        serverUrl = "http://" + serverUrl;
-        serverUrlInput.value = serverUrl;
-      }
-      localStorage.setItem("matchbox_server_url", serverUrl);
-      showToast("Settings saved", "success");
+      showToast("Cloud connection active", "success");
       settingsModal.classList.add("hidden");
       switchNav(navHomeBtn);
     });
