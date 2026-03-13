@@ -1,0 +1,20 @@
+{
+    "name": "Matchbox",
+    "short_name": "Matchbox",
+    "description": "Matchbox — Scan and validate carton barcodes against label barcodes.",
+    "start_url": ".",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0a0e1a",
+    "theme_color": "#0a0e1a",
+    "icons": [
+        {
+            "src": "icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "categories": ["utilities", "business"],
+    "lang": "en-US"
+}
