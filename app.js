@@ -174,8 +174,10 @@
     if (navAdminBtn) {
       if (freshRole === "admin") {
         navAdminBtn.classList.remove("hidden");
+        navAdminBtn.style.display = "flex";
       } else {
         navAdminBtn.classList.add("hidden");
+        navAdminBtn.style.display = "none";
       }
     }
   }

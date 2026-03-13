@@ -211,7 +211,7 @@
             const btn = document.getElementById('loginBtn');
             const err = document.getElementById('loginError');
 
-            btn.innerText = "Verifying Clearances...";
+            btn.innerText = "AUTHENTICATING...";
             btn.disabled = true;
             err.style.display = "none";
 
@@ -219,11 +219,11 @@
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
                 if (error) throw error;
 
-                // Check role
+                // Check role (Case insensitive check)
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-                if (!profile || profile.role !== 'admin') {
+                if (!profile || (profile.role || '').toLowerCase() !== 'admin') {
                     await supabase.auth.signOut();
-                    throw new Error("Access Denied: Administrator role required.");
+                    throw new Error("ACCESS DENIED: Administrator clearance required.");
                 }
 
                 showToast("Access Granted. Loading Command Desk...", "success");
@@ -363,9 +363,23 @@
         }
 
         // Auto-check session
-        if (sessionStorage.getItem('admin_session')) {
-            initDashboard();
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                if (profile && (profile.role || '').toLowerCase() === 'admin') {
+                    sessionStorage.setItem('admin_session', 'true');
+                    initDashboard();
+                    return;
+                }
+            }
+            // Traditional session fallback
+            if (sessionStorage.getItem('admin_session')) {
+                initDashboard();
+            }
         }
+
+        checkSession();
     </script>
 </body>
 </html>
