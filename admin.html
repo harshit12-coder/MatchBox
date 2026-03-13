@@ -402,9 +402,16 @@
             setTimeout(() => toast.style.display = "none", 3000);
         }
 
-        // Start session check on load
-        checkSession();
-    </script>
+        // Start session check on load with a safety timeout
+        const authTimeout = setTimeout(() => {
+            if (authLoader.style.display !== 'none') {
+                console.warn("Auth check timed out - showing login");
+                authLoader.style.display = 'none';
+                loginCard.style.display = 'block';
+            }
+        }, 3500);
+
+        checkSession().then(() => clearTimeout(authTimeout));
     </script>
 </body>
 </html>
