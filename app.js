@@ -169,6 +169,35 @@
 
     registerServiceWorker();
     initBarcodeDetector();
+    setupScannerAutoDiscovery();
+  }
+
+  // ─── Hardware Scanner Auto-Focus Logic ──────
+  function setupScannerAutoDiscovery() {
+    // Continuously check if focus is lost and recover it to the first empty field
+    document.addEventListener("keydown", (e) => {
+      // Ignore if user is inside a modal or settings
+      if (!settingsModal.classList.contains("hidden") || 
+          !scannerModal.classList.contains("hidden") ||
+          loginOverlay.style.display === "flex") return;
+
+      const active = document.activeElement;
+      const isInput = active.tagName === "INPUT" || active.tagName === "SELECT";
+      
+      // If no input is focused, redirect to our scan inputs
+      if (!isInput) {
+        if (!cartonInput.value.trim()) {
+          cartonInput.focus();
+        } else if (!labelInput.value.trim()) {
+          labelInput.focus();
+        }
+      }
+    });
+
+    // Auto-focus carton on page load or when coming back from settings
+    window.addEventListener("focus", () => {
+        if (!cartonInput.value.trim()) cartonInput.focus();
+    });
   }
 
   // Handle browser back-forward cache/navigation
@@ -232,6 +261,17 @@
     document.addEventListener('click', () => SoundEngine.init(), { once: true });
     document.addEventListener('touchstart', () => SoundEngine.init(), { once: true });
 
+    // Background focus grabber: if user clicks background, focus the current input
+    document.addEventListener("click", (e) => {
+      if (e.target === document.body || e.target.classList.contains("main-content") || e.target.classList.contains("app-container")) {
+        if (!cartonInput.value.trim()) {
+          cartonInput.focus();
+        } else if (!labelInput.value.trim()) {
+          labelInput.focus();
+        }
+      }
+    });
+
     cartonInput.addEventListener("focus", () => {
       scanCard1.classList.add("active");
       scanCard2.classList.remove("active");
@@ -248,25 +288,27 @@
     });
 
     cartonInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" || e.key === "Tab") {
         e.preventDefault();
-        if (cartonInput.value.trim()) {
+        const val = cartonInput.value.trim();
+        if (val) {
           scanCard1.classList.add("done");
           labelInput.focus();
-          hapticFeedback();
-        } else {
-          showToast("Please scan the carton barcode first", "warning");
+          hapticFeedback("light");
+          // Play a quick beep for hardware scan success
+          SoundEngine.scan(); 
         }
       }
     });
 
     labelInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" || e.key === "Tab") {
         e.preventDefault();
-        if (labelInput.value.trim()) {
+        const val = labelInput.value.trim();
+        if (val) {
+          scanCard2.classList.add("done");
+          hapticFeedback("light");
           performValidation();
-        } else {
-          showToast("Please scan the label barcode first", "warning");
         }
       }
     });
