@@ -98,7 +98,13 @@
 <body>
 
     <div id="adminLoginOverlay">
-        <div class="login-card" id="loginCard" style="display: none;">
+        <!-- Loader shown for 1 sec -->
+        <div id="authLoader" style="display: none; text-align: center;">
+            <div style="width: 40px; height: 40px; border: 4px solid var(--accent-primary); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p style="font-family: Orbitron, sans-serif; font-size: 0.8rem; letter-spacing: 2px;">SYNCING SESSION...</p>
+        </div>
+
+        <div class="login-card" id="loginCard">
             <h2 style="font-family: Orbitron, sans-serif; color: var(--accent-primary);">RESTRICTED</h2>
             <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 0.8rem;">ADMIN AUTHORIZATION REQUIRED</p>
             <div class="input-group">
@@ -112,16 +118,7 @@
             <button onclick="handleLogin()" class="btn btn-primary" id="loginBtn">Authorize Desk</button>
             <p id="loginError" style="color: var(--error); font-size: 0.8rem; margin-top: 15px; display: none;"></p>
         </div>
-        <div id="authLoader" style="text-align: center;">
-            <div style="width: 40px; height: 40px; border: 4px solid var(--accent-primary); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-            <p style="font-family: Orbitron, sans-serif; font-size: 0.8rem; letter-spacing: 2px;">VERIFYING CREDENTIALS...</p>
-            <button id="stuckLink" onclick="forceShowLogin()" style="display:none; background:none; border:none; color:var(--text-secondary); text-decoration:underline; margin-top:20px; font-size:0.7rem; cursor:pointer;">Stuck? Click here to login manually</button>
-        </div>
     </div>
-
-    <style>
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
 
     <div class="dashboard-container" id="dashboard">
         <header class="dashboard-header">
@@ -205,35 +202,19 @@
 
     <div id="toast"></div>
 
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
     <script>
-        console.log("Admin page initializing...");
-
-        // Global Error Guard
-        window.onerror = function(msg, url, line) {
-            console.error("Critical error caught:", msg, "at", url, ":", line);
-            forceShowLogin();
-            return false;
-        };
-
-        function forceShowLogin() {
-            console.log("Forcing login display...");
-            if (document.getElementById('authLoader')) document.getElementById('authLoader').style.display = 'none';
-            if (document.getElementById('loginCard')) document.getElementById('loginCard').style.display = 'block';
-        }
-
         const SUPABASE_URL = "https://sfndxujqzdybmquoqxmj.supabase.co";
         const SUPABASE_KEY = "sb_publishable_5zenHgExDRDkr6o20UVgOg_4mt7bV2z";
         
         let supabase;
         try {
-            if (!window.supabase) throw new Error("Supabase library not found");
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log("Supabase client created.");
         } catch (e) {
-            console.error("Initialization failed:", e);
-            setTimeout(() => {
-                document.getElementById('authLoader').innerHTML = `<p style="color:var(--error)">Initialization Error: ${e.message}. Please refresh.</p>`;
-            }, 1000);
+            console.error("Supabase load error:", e);
         }
 
         const loginOverlay = document.getElementById('adminLoginOverlay');
@@ -243,44 +224,27 @@
         let currentScans = [];
 
         async function checkSession() {
-            console.log("Checking session...");
+            if (!supabase) return;
             try {
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) throw sessionError;
-                
-                if (session) {
-                    console.log("Session found for user:", session.user.id);
-                    const { data: profile, error: profileError } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', session.user.id)
-                        .single();
-                    
-                    if (profileError) {
-                        console.warn("Profile fetch error or not found:", profileError);
-                        // Fallback: check localStorage hint if profile fetch fails
-                        const localRole = localStorage.getItem("matchbox_operator_role");
-                        if (localRole && localRole.toLowerCase() === 'admin') {
-                             console.log("Using localStorage role fallback.");
-                             initDashboard();
-                             return true;
-                        }
-                    }
+                // Show loader briefly
+                authLoader.style.display = 'block';
+                loginCard.style.display = 'none';
 
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
                     if (profile && (profile.role || '').toLowerCase() === 'admin') {
-                        console.log("Admin role confirmed.");
                         initDashboard();
-                        return true;
-                    } else {
-                        console.log("Not an admin or no profile.");
+                        return;
                     }
-                } else {
-                    console.log("No active session.");
                 }
             } catch (e) {
-                console.error("Session check caught error:", e);
+                console.error("Check session fail:", e);
             }
-            return false;
+            
+            // If we get here, no session or error, show login
+            authLoader.style.display = 'none';
+            loginCard.style.display = 'block';
         }
 
         async function handleLogin() {
@@ -300,24 +264,17 @@
             err.style.display = "none";
 
             try {
-                console.log("Attempting login...");
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
                 if (error) throw error;
 
-                console.log("Login success, checking profile...");
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
                 if (!profile || (profile.role || '').toLowerCase() !== 'admin') {
                     await supabase.auth.signOut();
                     throw new Error("ADMIN ROLE REQUIRED");
                 }
                 
-                // Sync localStorage for backup
-                localStorage.setItem("matchbox_operator", email);
-                localStorage.setItem("matchbox_operator_role", "admin");
-                
                 initDashboard();
             } catch (e) {
-                console.error("Login failed:", e);
                 err.innerText = e.message;
                 err.style.display = "block";
                 btn.disabled = false;
@@ -326,33 +283,26 @@
         }
 
         function initDashboard() {
-            console.log("Initializing dashboard views...");
-            if (typeof authTimeout !== 'undefined') clearTimeout(authTimeout);
             loginOverlay.style.display = "none";
             dashboard.style.display = "block";
-            
-            // Background fetch to avoid blocking UI
-            fetchStats().catch(e => console.error("Stats fetch fail", e));
-            fetchScans().catch(e => console.error("Scans fetch fail", e));
+            fetchStats();
+            fetchScans();
         }
 
         async function fetchStats() {
             const { data: scans } = await supabase.from('scans').select('*');
-            const { data: profiles } = await supabase.from('profiles').select('id');
             if (scans) {
                 document.getElementById('statTotal').innerText = scans.length;
                 const matches = scans.filter(s => s.result === 'MATCH').length;
                 document.getElementById('statAccuracy').innerText = (scans.length ? ((matches/scans.length)*100).toFixed(1) : 0) + '%';
             }
-            if (profiles) document.getElementById('statUsers').innerText = profiles.length;
         }
 
         async function fetchScans() {
             const resFilter = document.getElementById('filterResult').value;
             let query = supabase.from('scans').select('*').order('created_at', { ascending: false }).limit(100);
             if (resFilter !== 'ALL') query = query.eq('result', resFilter);
-            const { data, error } = await query;
-            if (error) console.error("Scans query error:", error);
+            const { data } = await query;
             if (data) {
                 currentScans = data;
                 document.getElementById('scanTableBody').innerHTML = data.map(row => `
@@ -379,7 +329,7 @@
                 return;
             }
 
-            btn.innerText = "PROVISIONING...";
+            btn.innerText = "WORKING...";
             btn.disabled = true;
 
             try {
@@ -391,19 +341,13 @@
 
                 if (error) throw error;
 
-                const { error: profError } = await supabase.from('profiles').insert([
+                await supabase.from('profiles').insert([
                     { id: data.user.id, username: email.split('@')[0], full_name, email, role }
                 ]);
 
-                if (profError) throw profError;
-
-                showToast("Staff Member Added!", "success");
-                document.getElementById('newUserFull').value = '';
-                document.getElementById('newUserEmail').value = '';
-                document.getElementById('newUserPass').value = '';
+                showToast("Staff Added!", "success");
                 fetchStats();
             } catch (e) {
-                console.error("Add user fail:", e);
                 showToast(e.message, "error");
             } finally {
                 btn.disabled = false;
@@ -412,12 +356,7 @@
         }
 
         function handleLogout() {
-            console.log("Logging out...");
-            supabase.auth.signOut().then(() => { 
-                localStorage.removeItem("matchbox_operator");
-                localStorage.removeItem("matchbox_operator_role");
-                window.location.href = 'index.html'; 
-            });
+            supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
         }
 
         function exportCSV() {
@@ -425,7 +364,7 @@
             let csv = "Timestamp,Operator,Carton,Label,Result\n" + currentScans.map(r => `"${new Date(r.created_at).toLocaleString()}","${r.scanned_by}","${r.carton_barcode}","${r.label_barcode}","${r.result}"`).join("\n");
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            a.download = `matchbox_audit_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `matchbox_audit.csv`;
             a.click();
         }
 
@@ -437,25 +376,8 @@
             setTimeout(() => t.style.display = "none", 3000);
         }
 
-        // Safety Startup
-        const authTimeout = setTimeout(() => {
-            if (loginOverlay.style.display !== 'none') {
-                console.warn("Auth check taking too long, showing manual link.");
-                document.getElementById('stuckLink').style.display = 'inline-block';
-            }
-        }, 5000);
-
-        // Actual Start
-        console.log("Starting session check...");
-        checkSession().then(isLoggedIn => {
-            if (!isLoggedIn) {
-                console.log("User not logged in or session check failed. Showing login card.");
-                forceShowLogin();
-            }
-        }).catch(err => {
-            console.error("checkSession fatal error:", err);
-            forceShowLogin();
-        });
+        // Run checkSession on load
+        window.addEventListener('load', checkSession);
     </script>
 </body>
 </html>
