@@ -99,7 +99,7 @@
 
     <div id="adminLoginOverlay">
         <div class="login-card" id="loginCard" style="display: none;">
-            <h2 style="font-family: 'Orbitron', sans-serif; color: var(--accent-primary);">RESTRICTED</h2>
+            <h2 style="font-family: Orbitron, sans-serif; color: var(--accent-primary);">RESTRICTED</h2>
             <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 0.8rem;">ADMIN AUTHORIZATION REQUIRED</p>
             <div class="input-group">
                 <label>Admin Email</label>
@@ -114,7 +114,8 @@
         </div>
         <div id="authLoader" style="text-align: center;">
             <div style="width: 40px; height: 40px; border: 4px solid var(--accent-primary); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-            <p style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; letter-spacing: 2px;">VERIFYING CREDENTIALS...</p>
+            <p style="font-family: Orbitron, sans-serif; font-size: 0.8rem; letter-spacing: 2px;">VERIFYING CREDENTIALS...</p>
+            <button id="stuckLink" onclick="forceShowLogin()" style="display:none; background:none; border:none; color:var(--text-secondary); text-decoration:underline; margin-top:20px; font-size:0.7rem; cursor:pointer;">Stuck? Click here to login manually</button>
         </div>
     </div>
 
@@ -205,9 +206,35 @@
     <div id="toast"></div>
 
     <script>
+        console.log("Admin page initializing...");
+
+        // Global Error Guard
+        window.onerror = function(msg, url, line) {
+            console.error("Critical error caught:", msg, "at", url, ":", line);
+            forceShowLogin();
+            return false;
+        };
+
+        function forceShowLogin() {
+            console.log("Forcing login display...");
+            if (document.getElementById('authLoader')) document.getElementById('authLoader').style.display = 'none';
+            if (document.getElementById('loginCard')) document.getElementById('loginCard').style.display = 'block';
+        }
+
         const SUPABASE_URL = "https://sfndxujqzdybmquoqxmj.supabase.co";
         const SUPABASE_KEY = "sb_publishable_5zenHgExDRDkr6o20UVgOg_4mt7bV2z";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let supabase;
+        try {
+            if (!window.supabase) throw new Error("Supabase library not found");
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log("Supabase client created.");
+        } catch (e) {
+            console.error("Initialization failed:", e);
+            setTimeout(() => {
+                document.getElementById('authLoader').innerHTML = `<p style="color:var(--error)">Initialization Error: ${e.message}. Please refresh.</p>`;
+            }, 1000);
+        }
 
         const loginOverlay = document.getElementById('adminLoginOverlay');
         const loginCard = document.getElementById('loginCard');
@@ -216,40 +243,54 @@
         let currentScans = [];
 
         async function checkSession() {
+            console.log("Checking session...");
             try {
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) throw sessionError;
                 
                 if (session) {
-                    const { data: profile, error: profError } = await supabase
+                    console.log("Session found for user:", session.user.id);
+                    const { data: profile, error: profileError } = await supabase
                         .from('profiles')
                         .select('role')
                         .eq('id', session.user.id)
                         .single();
                     
-                    if (!profError && profile && (profile.role || '').toLowerCase() === 'admin') {
-                        initDashboard();
-                        return;
+                    if (profileError) {
+                        console.warn("Profile fetch error or not found:", profileError);
+                        // Fallback: check localStorage hint if profile fetch fails
+                        const localRole = localStorage.getItem("matchbox_operator_role");
+                        if (localRole && localRole.toLowerCase() === 'admin') {
+                             console.log("Using localStorage role fallback.");
+                             initDashboard();
+                             return true;
+                        }
                     }
+
+                    if (profile && (profile.role || '').toLowerCase() === 'admin') {
+                        console.log("Admin role confirmed.");
+                        initDashboard();
+                        return true;
+                    } else {
+                        console.log("Not an admin or no profile.");
+                    }
+                } else {
+                    console.log("No active session.");
                 }
-                
-                // If no session or not admin, show login card
-                authLoader.style.display = 'none';
-                loginCard.style.display = 'block';
             } catch (e) {
-                console.error("Session check failed:", e);
-                authLoader.style.display = 'none';
-                loginCard.style.display = 'block';
+                console.error("Session check caught error:", e);
             }
+            return false;
         }
 
         async function handleLogin() {
-            const email = document.getElementById('adminEmail').value;
-            const pass = document.getElementById('adminPass').value;
+            const email = document.getElementById('adminEmail').value.trim();
+            const pass = document.getElementById('adminPass').value.trim();
             const btn = document.getElementById('loginBtn');
             const err = document.getElementById('loginError');
 
             if (!email || !pass) {
-                err.innerText = "Please enter both credentials.";
+                err.innerText = "Enter credentials";
                 err.style.display = "block";
                 return;
             }
@@ -259,18 +300,24 @@
             err.style.display = "none";
 
             try {
+                console.log("Attempting login...");
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
                 if (error) throw error;
 
+                console.log("Login success, checking profile...");
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
                 if (!profile || (profile.role || '').toLowerCase() !== 'admin') {
                     await supabase.auth.signOut();
-                    throw new Error("ACCESS DENIED: Administrator role required.");
+                    throw new Error("ADMIN ROLE REQUIRED");
                 }
-
-                showToast("Access Granted.", "success");
+                
+                // Sync localStorage for backup
+                localStorage.setItem("matchbox_operator", email);
+                localStorage.setItem("matchbox_operator_role", "admin");
+                
                 initDashboard();
             } catch (e) {
+                console.error("Login failed:", e);
                 err.innerText = e.message;
                 err.style.display = "block";
                 btn.disabled = false;
@@ -279,61 +326,51 @@
         }
 
         function initDashboard() {
+            console.log("Initializing dashboard views...");
+            if (typeof authTimeout !== 'undefined') clearTimeout(authTimeout);
             loginOverlay.style.display = "none";
             dashboard.style.display = "block";
-            fetchStats();
-            fetchScans();
+            
+            // Background fetch to avoid blocking UI
+            fetchStats().catch(e => console.error("Stats fetch fail", e));
+            fetchScans().catch(e => console.error("Scans fetch fail", e));
         }
 
         async function fetchStats() {
-            try {
-                const { data: scans } = await supabase.from('scans').select('*');
-                const { data: profiles } = await supabase.from('profiles').select('id');
-
-                if (scans) {
-                    document.getElementById('statTotal').innerText = scans.length;
-                    const matches = scans.filter(s => s.result === 'MATCH').length;
-                    const accuracy = scans.length > 0 ? ((matches / scans.length) * 100).toFixed(1) : 0;
-                    document.getElementById('statAccuracy').innerText = accuracy + '%';
-                }
-                if (profiles) {
-                    document.getElementById('statUsers').innerText = profiles.length;
-                }
-            } catch (e) { console.error("Stats fetch error:", e); }
+            const { data: scans } = await supabase.from('scans').select('*');
+            const { data: profiles } = await supabase.from('profiles').select('id');
+            if (scans) {
+                document.getElementById('statTotal').innerText = scans.length;
+                const matches = scans.filter(s => s.result === 'MATCH').length;
+                document.getElementById('statAccuracy').innerText = (scans.length ? ((matches/scans.length)*100).toFixed(1) : 0) + '%';
+            }
+            if (profiles) document.getElementById('statUsers').innerText = profiles.length;
         }
 
         async function fetchScans() {
             const resFilter = document.getElementById('filterResult').value;
-            let query = supabase.from('scans').select('*').order('created_at', { ascending: false }).limit(200);
-            
-            if (resFilter !== 'ALL') {
-                query = query.eq('result', resFilter);
-            }
-
+            let query = supabase.from('scans').select('*').order('created_at', { ascending: false }).limit(100);
+            if (resFilter !== 'ALL') query = query.eq('result', resFilter);
             const { data, error } = await query;
+            if (error) console.error("Scans query error:", error);
             if (data) {
                 currentScans = data;
-                renderTable(data);
+                document.getElementById('scanTableBody').innerHTML = data.map(row => `
+                    <tr>
+                        <td style="font-size: 0.75rem; color: var(--text-secondary);">${new Date(row.created_at).toLocaleString()}</td>
+                        <td style="font-weight: 700;">${row.scanned_by || 'Unknown'}</td>
+                        <td style="font-family: monospace; color: var(--accent-primary);">${row.carton_barcode}</td>
+                        <td style="font-family: monospace;">${row.label_barcode}</td>
+                        <td><span class="badge ${row.result.toLowerCase()}">${row.result}</span></td>
+                    </tr>
+                `).join('');
             }
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('scanTableBody');
-            tbody.innerHTML = data.map(row => `
-                <tr>
-                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${new Date(row.created_at).toLocaleString()}</td>
-                    <td style="font-weight: 700;">${row.scanned_by || 'Unknown'}</td>
-                    <td style="font-family: monospace; color: var(--accent-primary);">${row.carton_barcode}</td>
-                    <td style="font-family: monospace;">${row.label_barcode}</td>
-                    <td><span class="badge ${row.result.toLowerCase()}">${row.result}</span></td>
-                </tr>
-            `).join('');
         }
 
         async function addUser() {
-            const full_name = document.getElementById('newUserFull').value;
-            const email = document.getElementById('newUserEmail').value;
-            const password = document.getElementById('newUserPass').value;
+            const full_name = document.getElementById('newUserFull').value.trim();
+            const email = document.getElementById('newUserEmail').value.trim();
+            const password = document.getElementById('newUserPass').value.trim();
             const role = document.getElementById('newUserRole').value;
             const btn = document.getElementById('addUserBtn');
 
@@ -366,6 +403,7 @@
                 document.getElementById('newUserPass').value = '';
                 fetchStats();
             } catch (e) {
+                console.error("Add user fail:", e);
                 showToast(e.message, "error");
             } finally {
                 btn.disabled = false;
@@ -374,44 +412,50 @@
         }
 
         function handleLogout() {
-            supabase.auth.signOut().then(() => {
-                window.location.href = 'index.html';
+            console.log("Logging out...");
+            supabase.auth.signOut().then(() => { 
+                localStorage.removeItem("matchbox_operator");
+                localStorage.removeItem("matchbox_operator_role");
+                window.location.href = 'index.html'; 
             });
         }
 
         function exportCSV() {
-            if (currentScans.length === 0) return;
-            let csv = "Timestamp,Operator,Carton,Label,Result\n";
-            currentScans.forEach(r => {
-                csv += `"${new Date(r.created_at).toLocaleString()}","${r.scanned_by}","${r.carton_barcode}","${r.label_barcode}","${r.result}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
+            if (!currentScans.length) return;
+            let csv = "Timestamp,Operator,Carton,Label,Result\n" + currentScans.map(r => `"${new Date(r.created_at).toLocaleString()}","${r.scanned_by}","${r.carton_barcode}","${r.label_barcode}","${r.result}"`).join("\n");
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
             a.download = `matchbox_audit_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
         }
 
         function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.background = type === "success" ? "#10b981" : "#ef4444";
-            toast.style.color = "white";
-            toast.style.display = "block";
-            setTimeout(() => toast.style.display = "none", 3000);
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.background = type === "success" ? "#10b981" : "#ef4444";
+            t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 3000);
         }
 
-        // Start session check on load with a safety timeout
+        // Safety Startup
         const authTimeout = setTimeout(() => {
-            if (authLoader.style.display !== 'none') {
-                console.warn("Auth check timed out - showing login");
-                authLoader.style.display = 'none';
-                loginCard.style.display = 'block';
+            if (loginOverlay.style.display !== 'none') {
+                console.warn("Auth check taking too long, showing manual link.");
+                document.getElementById('stuckLink').style.display = 'inline-block';
             }
-        }, 3500);
+        }, 5000);
 
-        checkSession().then(() => clearTimeout(authTimeout));
+        // Actual Start
+        console.log("Starting session check...");
+        checkSession().then(isLoggedIn => {
+            if (!isLoggedIn) {
+                console.log("User not logged in or session check failed. Showing login card.");
+                forceShowLogin();
+            }
+        }).catch(err => {
+            console.error("checkSession fatal error:", err);
+            forceShowLogin();
+        });
     </script>
 </body>
 </html>
