@@ -640,22 +640,26 @@
 
     if (isSmartScanMode && savedTarget === "carton") {
       // Smart Scan Move to Phase 2: Label
+      labelInput.value = ""; // Ensure label is empty for phase 2
+      scannerHintText.textContent = "WAITING...";
+      
       setTimeout(() => {
+        if (!scannerActive) return;
         currentScanTarget = "label";
-        scannerModalTitle.textContent = "Scan Label Barcode";
-        scannerHintText.textContent = "Now scan the Label Barcode";
-        hapticFeedback("light");
+        scannerModalTitle.textContent = "STEP 2: SCAN LABEL";
+        scannerHintText.textContent = "NOW SCAN THE LABEL BARCODE";
+        hapticFeedback("success");
         
-        // Brief visual flash to signal transition
-        const viewfinder = document.querySelector(".scanner-overlay-frame");
+        // Visual flash to signal transition
+        const viewfinder = document.querySelector(".scanner-viewfinder");
         if (viewfinder) {
-          viewfinder.style.borderColor = "var(--success)";
-          setTimeout(() => viewfinder.style.borderColor = "", 400);
+          viewfinder.style.border = "4px solid var(--accent-secondary)";
+          setTimeout(() => viewfinder.style.border = "", 500);
         }
         
-        // Re-start detection loop for the next barcode
+        // Re-start detection loop after user has had time to move
         startDetectionLoop();
-      }, 600);
+      }, 1200); // Increased delay to 1.2s to allow camera movement
     } else {
       // Normal scan or end of smart scan
       closeScanner();
