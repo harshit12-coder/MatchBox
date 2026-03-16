@@ -290,6 +290,7 @@
     validateBtn.addEventListener("click", performValidation);
 
     scanCartonBtn.addEventListener("click", () => {
+      resetForm();
       isSmartScanMode = false;
       openScanner("carton");
     });
@@ -298,6 +299,7 @@
       openScanner("label");
     });
     smartScanBtn.addEventListener("click", () => {
+      resetForm();
       isSmartScanMode = true;
       openScanner("carton");
     });
@@ -666,19 +668,25 @@
 
       setTimeout(() => {
         if (savedTarget === "carton") {
+          // If we scanned a new carton, we MUST clear the old label to avoid false matches
+          if (!isSmartScanMode) labelInput.value = ""; 
+          
           if (!labelInput.value.trim()) {
             labelInput.focus();
-            if (isSmartScanMode) {
-              // Should not happen with new logic but safe fallback
-              openScanner("label");
-            }
-          }
-        } else {
-          if (cartonInput.value.trim() && labelInput.value.trim()) {
+          } else {
+            // Both are full, auto-validate
             performValidation();
           }
+        } else {
+          // Just scanned a label
+          if (cartonInput.value.trim()) {
+            performValidation();
+          } else {
+            cartonInput.focus();
+            showToast("Now scan the carton barcode", "info");
+          }
         }
-      }, 400);
+      }, 300);
     }
   }
 
@@ -786,11 +794,12 @@
       sendScanToServer(record);
     }
 
+    // Auto-reset form after a delay so user can see result
     setTimeout(
       () => {
         resetForm();
       },
-      isMatch ? 2000 : 3500
+      isMatch ? 1500 : 2500 // Faster reset for match
     );
   }
 
