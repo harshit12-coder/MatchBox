@@ -870,7 +870,9 @@
 
   // ─── Show Overlay ──────────────────────────
   function showOverlay(isMatch) {
-    resultOverlay.classList.remove("hidden");
+    resultOverlay.classList.remove("hidden", "success-active", "error-active");
+    resultOverlay.classList.add(isMatch ? "success-active" : "error-active");
+    
     resultOverlayContent.innerHTML = `
       <div class="overlay-icon ${isMatch ? "success-icon" : "error-icon"}">
         ${
@@ -894,8 +896,10 @@
     setTimeout(
       () => {
         resultOverlayContent.style.animation = "overlayFadeOut 0.3s ease forwards";
+        resultOverlayContent.style.animation = "overlayFadeOut 0.3s ease forwards";
         setTimeout(() => {
           resultOverlay.classList.add("hidden");
+          resultOverlay.classList.remove("success-active", "error-active");
           resultOverlayContent.style.animation = "";
         }, 300);
       },
@@ -905,7 +909,7 @@
 
   // ─── Confetti ──────────────────────────────
   function spawnConfetti() {
-    const colors = ["#10b981","#34d399","#6ee7b7","#a5b4fc","#818cf8","#fbbf24","#f472b6"];
+    const colors = ["#00ff9d","#34d399","#6ee7b7","#a5b4fc","#818cf8","#fbbf24","#f472b6"];
     for (let i = 0; i < 30; i++) {
       const conf = document.createElement("div");
       conf.className = "confetti";

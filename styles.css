@@ -24,16 +24,17 @@
   --accent-secondary: #f97316;
   --accent-secondary-rgb: 249, 115, 22;
 
-  --success: #10b981;
-  --success-rgb: 16, 185, 129;
-  --success-bg: rgba(16, 185, 129, 0.08);
-  --success-border: rgba(16, 185, 129, 0.3);
-  --success-glow: rgba(16, 185, 129, 0.2);
+  --success: #00ff9d; /* Electric Emerald */
+  --success-rgb: 0, 255, 157;
+  --success-bg: rgba(0, 255, 157, 0.15);
+  --success-border: rgba(0, 255, 157, 0.6);
+  --success-glow: rgba(0, 255, 157, 0.4);
 
-  --error: #ef4444;
-  --error-rgb: 239, 68, 68;
-  --error-border: rgba(239, 68, 68, 0.3);
-  --error-glow: rgba(239, 68, 68, 0.2);
+  --error: #ff2a2a; /* Racing Red */
+  --error-rgb: 255, 42, 42;
+  --error-bg: rgba(255, 42, 42, 0.15);
+  --error-border: rgba(255, 42, 42, 0.6);
+  --error-glow: rgba(255, 42, 42, 0.4);
 
   /* Refined Typography for Mobile comfort */
   --font-family: "Plus Jakarta Sans", "Orbitron", -apple-system, sans-serif;
