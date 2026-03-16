@@ -117,8 +117,8 @@
         </div>
       </header>
 
-      <!-- Main Content -->
-      <main class="main-content">
+      <!-- Main Content (Home View) -->
+      <main class="main-content" id="homeView">
         <!-- Smart Scan Action -->
         <div class="smart-scan-section">
           <button class="smart-scan-btn" id="smartScanBtn">
@@ -334,6 +334,63 @@
           </div>
         </div>
       </main>
+
+      <!-- History/Admin View -->
+      <main class="main-content" id="adminView" style="display: none;">
+        <div class="admin-stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Cloud Records</span>
+                <span class="stat-value" id="adminStatTotal">0</span>
+            </div>
+            <div class="stat-card" style="border-top: 2px solid var(--success);">
+                <span class="stat-label">Accuracy</span>
+                <span class="stat-value" id="adminStatAccuracy">0%</span>
+            </div>
+            <div class="stat-card" style="border-top: 2px solid var(--accent-secondary);">
+                <span class="stat-label">Staff Count</span>
+                <span class="stat-value" id="adminStatUsers">0</span>
+            </div>
+        </div>
+
+        <div class="panel glass-card">
+            <h3 class="panel-title">Master Activity Monitor</h3>
+            <div class="filters-row">
+                <select id="filterAdminResult" class="scan-input" onchange="fetchAdminScans()" style="padding: 10px; font-size: 0.8rem; height: 40px; width: 60%;">
+                    <option value="ALL">ALL RECORDS</option>
+                    <option value="MATCH">MATCH ONLY</option>
+                    <option value="MISMATCH">FAILURES ONLY</option>
+                </select>
+                <button id="adminExportBtn" class="btn-micro" style="flex: 1;">Export CSV</button>
+            </div>
+            <div class="table-container">
+                <table id="adminScanTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Staff</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminScanTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel glass-card">
+            <h3 class="panel-title">Add New Operator</h3>
+            <div class="form-grid">
+                <input type="text" id="newUserFull" class="scan-input" placeholder="Full Name">
+                <input type="email" id="newUserEmail" class="scan-input" placeholder="Work Email">
+                <input type="text" id="newUserPass" class="scan-input" placeholder="Password (Min 6)">
+                <select id="newUserRole" class="scan-input">
+                    <option value="user">Operator</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+            <button id="adminAddUserBtn" class="validate-btn" style="margin-top: 15px;">Create Access Profile</button>
+        </div>
+      </main>
     </div>
 
     <!-- Toast Container -->
@@ -479,10 +536,9 @@
 
       <button class="nav-item hidden" id="navAdminBtn">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
-        <span>History</span>
+        <span>Desk</span>
       </button>
     </nav>
 

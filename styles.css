@@ -2099,3 +2099,112 @@ body::after {
     gap: 12px;
   }
 }
+
+/* ============================================
+   ADMIN DASHBOARD INTEGRATION
+   ============================================ */
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.panel {
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+}
+
+.panel-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent-primary);
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+.filters-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.btn-micro {
+    padding: 8px 12px;
+    background: rgba(0, 242, 255, 0.1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--accent-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.2);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+th {
+    text-align: left;
+    padding: 12px;
+    background: rgba(0, 242, 255, 0.05);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+}
+
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.badge-match { background: var(--success-bg); color: var(--success); }
+.badge-mismatch { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+/* Confetti effect */
+.confetti {
+  position: fixed;
+  z-index: 5000;
+  pointer-events: none;
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@media (min-width: 400px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

@@ -58,6 +58,18 @@
   const statPass = document.getElementById("statPass");
   const statFail = document.getElementById("statFail");
 
+  // Admin View DOM
+  const homeView = document.getElementById("homeView");
+  const adminView = document.getElementById("adminView");
+  const adminAddUserBtn = document.getElementById("adminAddUserBtn");
+  const adminScanTableBody = document.getElementById("adminScanTableBody");
+  const filterAdminResult = document.getElementById("filterAdminResult");
+  const adminExportBtn = document.getElementById("adminExportBtn");
+
+  const adminStatTotal = document.getElementById("adminStatTotal");
+  const adminStatAccuracy = document.getElementById("adminStatAccuracy");
+  const adminStatUsers = document.getElementById("adminStatUsers");
+
   // ─── Supabase Configuration ────────────────
   const SUPABASE_URL = "https://sfndxujqzdybmquoqxmj.supabase.co";
   const SUPABASE_KEY = "sb_publishable_5zenHgExDRDkr6o20UVgOg_4mt7bV2z";
@@ -315,12 +327,19 @@
         switchNav(navSettingsBtn);
       } else {
         settingsModal.classList.add("hidden");
-        switchNav(navHomeBtn);
+        // Check which view is currently active
+        if (adminView.style.display === "flex" || adminView.style.display === "block") {
+            switchNav(navAdminBtn);
+        } else {
+            switchNav(navHomeBtn);
+        }
       }
     });
 
     navHomeBtn.addEventListener("click", () => {
       settingsModal.classList.add("hidden");
+      homeView.style.display = "flex";
+      adminView.style.display = "none";
       switchNav(navHomeBtn);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -354,8 +373,23 @@
 
     // View Data (Admin Only)
     navAdminBtn.addEventListener("click", () => {
-      window.location.href = `admin.html`;
+      homeView.style.display = "none";
+      adminView.style.display = "block";
+      settingsModal.classList.add("hidden");
+      switchNav(navAdminBtn);
+      
+      // Load and refresh admin data
+      fetchAdminStats();
+      fetchAdminScans();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+
+    adminAddUserBtn.addEventListener("click", adminAddUser);
+    adminExportBtn.addEventListener("click", exportCSV);
+    
+    // Global function for filter change
+    window.fetchAdminScans = fetchAdminScans;
+    window.exportCSV = exportCSV;
 
     // Logout Logic (from settings modal)
     navLogoutBtn.addEventListener("click", () => {
@@ -978,6 +1012,169 @@
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // ─── Admin Dashboard Logic ──────────────────
+  async function fetchAdminStats() {
+    try {
+        // 1. Total Scans
+        const { count: total, error: e1 } = await supabase
+            .from('scans')
+            .select('*', { count: 'exact', head: true });
+        
+        // 2. Accuracy (Match Count)
+        const { count: matches, error: e2 } = await supabase
+            .from('scans')
+            .select('*', { count: 'exact', head: true })
+            .eq('result', 'MATCH');
+
+        // 3. Staff Count
+        const { count: userCount, error: e3 } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true });
+
+        if (e1 || e2 || e3) throw (e1 || e2 || e3);
+
+        animateNumber(adminStatTotal, total || 0);
+        animateNumber(adminStatUsers, userCount || 0);
+        
+        const accuracy = total > 0 ? Math.round((matches / total) * 100) : 0;
+        adminStatAccuracy.textContent = accuracy + "%";
+
+    } catch (err) {
+        console.error("Dashboard Stats Error:", err);
+    }
+  }
+
+  async function fetchAdminScans() {
+    const filter = filterAdminResult.value;
+    adminScanTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center">SYNCING...</td></tr>';
+
+    try {
+        let query = supabase
+            .from('scans')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (filter !== 'ALL') {
+            query = query.eq('result', filter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            adminScanTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center">No records found</td></tr>';
+            return;
+        }
+
+        adminScanTableBody.innerHTML = data.map(scan => {
+            const time = new Date(scan.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const badgeClass = scan.result === 'MATCH' ? 'badge-match' : 'badge-mismatch';
+            return `
+                <tr>
+                    <td>${time}</td>
+                    <td style="font-weight:700">${scan.scanned_by}</td>
+                    <td style="font-size: 0.65rem; opacity: 0.7;">
+                        C: ${truncate(scan.carton_barcode, 12)}<br>
+                        L: ${truncate(scan.label_barcode, 12)}
+                    </td>
+                    <td><span class="badge ${badgeClass}">${scan.result}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error("Fetch Scans Error:", err);
+        adminScanTableBody.innerHTML = '<tr><td colspan="4" style="color:var(--error)">Error loading data</td></tr>';
+    }
+  }
+
+  async function adminAddUser() {
+    const fullName = document.getElementById("newUserFull").value.trim();
+    const email = document.getElementById("newUserEmail").value.trim();
+    const password = document.getElementById("newUserPass").value.trim();
+    const role = document.getElementById("newUserRole").value;
+
+    if (!fullName || !email || !password) {
+        showToast("Fill all operator details", "warning");
+        return;
+    }
+
+    if (password.length < 6) {
+        showToast("Password must be 6+ chars", "warning");
+        return;
+    }
+
+    adminAddUserBtn.disabled = true;
+    adminAddUserBtn.textContent = "PROVISIONING...";
+
+    try {
+        // 1. Sign Up in Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: fullName } }
+        });
+
+        if (authError) throw authError;
+
+        // 2. Create Profile
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+                id: authData.user.id,
+                email: email,
+                full_name: fullName,
+                role: role
+            }]);
+
+        if (profileError) throw profileError;
+
+        showToast(`Staff account created for ${fullName}`, "success");
+        
+        // Reset fields
+        document.getElementById("newUserFull").value = "";
+        document.getElementById("newUserEmail").value = "";
+        document.getElementById("newUserPass").value = "";
+        
+        fetchAdminStats(); // Refresh count
+
+    } catch (err) {
+        console.error("Provisioning Error:", err);
+        showToast(err.message || "Failed to create user", "error");
+    } finally {
+        adminAddUserBtn.disabled = false;
+        adminAddUserBtn.textContent = "Create Access Profile";
+    }
+  }
+
+  function exportCSV() {
+    const table = document.getElementById("adminScanTable");
+    let csv = "Time,Staff,Details,Status\n";
+    const rows = adminScanTableBody.querySelectorAll("tr");
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll("td");
+        if (cols.length === 4) {
+            const time = cols[0].innerText;
+            const staff = cols[1].innerText;
+            const details = cols[2].innerText.replace(/\n/g, ' | ');
+            const status = cols[3].innerText;
+            csv += `"${time}","${staff}","${details}","${status}"\n`;
+        }
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `Matchbox_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // ─── Start ─────────────────────────────────
