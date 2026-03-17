@@ -141,6 +141,12 @@
     if (currentUser) {
       loginOverlay.style.display = "none";
       updateAdminButton(); 
+      // Ensure focus on carton barcode when app opens
+      setTimeout(() => {
+        if (cartonInput && homeView.style.display !== "none") {
+          cartonInput.focus();
+        }
+      }, 500);
     }
 
     renderStats();
@@ -196,8 +202,24 @@
 
     // Auto-focus carton on page load or when coming back from settings
     window.addEventListener("focus", () => {
-        if (!cartonInput.value.trim()) cartonInput.focus();
+        if (!cartonInput.value.trim() && homeView.style.display !== "none") {
+            cartonInput.focus();
+        }
     });
+
+    // Also focus when switching back to home view
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === "style") {
+                if (homeView.style.display !== "none") {
+                    if (!cartonInput.value.trim()) {
+                        cartonInput.focus();
+                    }
+                }
+            }
+        });
+    });
+    observer.observe(homeView, { attributes: true });
   }
 
   // Handle browser back-forward cache/navigation
@@ -314,16 +336,31 @@
     });
 
     cartonInput.addEventListener("input", () => {
-      if (cartonInput.value.trim()) {
+      const val = cartonInput.value.trim();
+      if (val) {
         scanCard1.classList.add("done");
+        
+        // Auto-transition to label if format matches (for hardware scanners without Enter suffix)
+        const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/;
+        if (companyRegex.test(val)) {
+            labelInput.focus();
+            SoundEngine.scan(); // Play scan sound for magic transition
+        }
       } else {
         scanCard1.classList.remove("done");
       }
     });
 
     labelInput.addEventListener("input", () => {
-      if (labelInput.value.trim()) {
+      const val = labelInput.value.trim();
+      if (val) {
         scanCard2.classList.add("done");
+
+        // Auto-validate if format matches and carton is present
+        const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/;
+        if (companyRegex.test(val) && cartonInput.value.trim()) {
+            performValidation();
+        }
       } else {
         scanCard2.classList.remove("done");
       }
@@ -495,6 +532,11 @@
       showToast(`Welcome, ${currentUserFullName}!`, "success");
       loginOverlay.style.display = "none";
       updateAdminButton();
+      
+      // Focus carton barcode after login
+      setTimeout(() => {
+        if (cartonInput) cartonInput.focus();
+      }, 300);
 
     } catch (error) {
       console.error("Auth error:", error);
