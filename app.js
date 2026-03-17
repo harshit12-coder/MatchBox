@@ -9,7 +9,6 @@
   // ─── DOM References ────────────────────────
   const cartonInput = document.getElementById("cartonBarcodeInput");
   const labelInput = document.getElementById("labelBarcodeInput");
-  const validateBtn = document.getElementById("validateBtn");
   const resultPanel = document.getElementById("resultPanel");
   const resultIconContainer = document.getElementById("resultIconContainer");
   const resultTitle = document.getElementById("resultTitle");
@@ -43,9 +42,7 @@
   // Settings DOM
   const settingsModal = document.getElementById("settingsModal");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
-  const saveSettingsBtn = document.getElementById("saveSettingsBtn");
   const syncStatus = document.getElementById("syncStatus");
-  const smartScanBtn = document.getElementById("smartScanBtn");
   const logoGroup = document.querySelector(".logo-group");
   const loginOverlay = document.getElementById("loginOverlay");
   const loginUsernameInput = document.getElementById("loginUsername");
@@ -61,14 +58,20 @@
   // Admin View DOM
   const homeView = document.getElementById("homeView");
   const adminView = document.getElementById("adminView");
-  const adminAddUserBtn = document.getElementById("adminAddUserBtn");
   const adminScanTableBody = document.getElementById("adminScanTableBody");
   const filterAdminResult = document.getElementById("filterAdminResult");
+  const filterAdminDate = document.getElementById("filterAdminDate");
   const adminExportBtn = document.getElementById("adminExportBtn");
 
   const adminStatTotal = document.getElementById("adminStatTotal");
   const adminStatAccuracy = document.getElementById("adminStatAccuracy");
   const adminStatUsers = document.getElementById("adminStatUsers");
+
+  const operatorsView = document.getElementById("operatorsView");
+  const manageOperatorsBtn = document.getElementById("manageOperatorsBtn");
+  const backToAdminBtn = document.getElementById("backToAdminBtn");
+  const addOperatorForm = document.getElementById("addOperatorForm");
+  const operatorsListBody = document.getElementById("operatorsListBody");
 
   // ─── Supabase Configuration ────────────────
   const SUPABASE_URL = "https://sfndxujqzdybmquoqxmj.supabase.co";
@@ -82,7 +85,6 @@
   let barcodeDetector = null;
   let scannerActive = false;
   let lastScanTime = 0;
-  let isSmartScanMode = false;
 
   // ─── State ─────────────────────────────────
   let history = JSON.parse(localStorage.getItem("matchbox_history") || "[]");
@@ -139,11 +141,15 @@
   function init() {
     // Show login if not logged in
     if (currentUser) {
-      loginOverlay.style.display = "none";
+      loginOverlay.classList.add("view-fade-in");
+      setTimeout(() => {
+          loginOverlay.style.display = "none";
+      }, 300);
       updateAdminButton(); 
       // Ensure focus on carton barcode when app opens
       setTimeout(() => {
         if (cartonInput && homeView.style.display !== "none") {
+          cartonInput.classList.add("view-fade-in");
           cartonInput.focus();
         }
       }, 500);
@@ -152,6 +158,11 @@
     renderStats();
     renderHistory();
     setupListeners();
+
+    // Default admin date to today
+    if (filterAdminDate) {
+      filterAdminDate.value = new Date().toISOString().split('T')[0];
+    }
 
     if (window.particlesJS && document.getElementById('particles-js')) {
       particlesJS("particles-js", {
@@ -246,12 +257,17 @@
   }
 
   // Backup check every 3 seconds to ensure UI consistency
+  // (We'll keep this as a safety net but also call it on interactions)
   setInterval(updateAdminButton, 3000);
   
-  // Immediate check on script load
-  document.addEventListener("readystatechange", () => {
-    if (document.readyState === "interactive") updateAdminButton();
+  window.addEventListener('storage', (e) => {
+    if (e.key === "matchbox_operator" || e.key === "matchbox_operator_role") {
+      updateAdminButton();
+    }
   });
+
+  // Immediate check on script load
+  document.addEventListener("DOMContentLoaded", updateAdminButton);
   async function initBarcodeDetector() {
     if ("BarcodeDetector" in window) {
       try {
@@ -297,16 +313,18 @@
     cartonInput.addEventListener("focus", () => {
       scanCard1.classList.add("active");
       scanCard2.classList.remove("active");
+      scanCard1.classList.add("view-fade-in");
     });
     cartonInput.addEventListener("blur", () => {
-      scanCard1.classList.remove("active");
+      scanCard1.classList.remove("active", "view-fade-in");
     });
     labelInput.addEventListener("focus", () => {
       scanCard2.classList.add("active");
       scanCard1.classList.remove("active");
+      scanCard2.classList.add("view-fade-in");
     });
     labelInput.addEventListener("blur", () => {
-      scanCard2.classList.remove("active");
+      scanCard2.classList.remove("active", "view-fade-in");
     });
 
     cartonInput.addEventListener("keydown", (e) => {
@@ -378,21 +396,13 @@
       }
     });
 
-    validateBtn.addEventListener("click", performValidation);
 
     scanCartonBtn.addEventListener("click", () => {
       resetForm();
-      isSmartScanMode = false;
       openScanner("carton");
     });
     scanLabelBtn.addEventListener("click", () => {
-      isSmartScanMode = false;
       openScanner("label");
-    });
-    smartScanBtn.addEventListener("click", () => {
-      resetForm();
-      isSmartScanMode = true;
-      openScanner("carton");
     });
     scannerCloseBtn.addEventListener("click", closeScanner);
 
@@ -413,6 +423,27 @@
       if(activeBtn) activeBtn.classList.add("active");
     }
 
+    function switchView(viewId) {
+      const views = [homeView, adminView, operatorsView];
+      views.forEach(v => {
+        if (v) {
+          v.classList.remove("view-fade-in");
+          v.style.display = "none";
+        }
+      });
+
+      const activeView = (viewId === "home") ? homeView : (viewId === "admin" ? adminView : operatorsView);
+      if (activeView) {
+        activeView.style.display = "flex";
+        activeView.classList.add("view-fade-in");
+      }
+      
+      // Update nav active state (Operators view is part of Admin logically)
+      document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
+      if (viewId === "home") navHomeBtn.classList.add("active");
+      if (viewId === "admin" || viewId === "operators") navAdminBtn.classList.add("active");
+    }
+
     navSettingsBtn.addEventListener("click", () => {
       const isHidden = settingsModal.classList.contains("hidden");
       if (isHidden) {
@@ -431,9 +462,7 @@
 
     navHomeBtn.addEventListener("click", () => {
       settingsModal.classList.add("hidden");
-      homeView.style.display = "flex";
-      adminView.style.display = "none";
-      switchNav(navHomeBtn);
+      switchView("home");
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
@@ -448,11 +477,6 @@
       switchNav(navHomeBtn);
     });
 
-    saveSettingsBtn.addEventListener("click", () => {
-      showToast("Cloud connection active", "success");
-      settingsModal.classList.add("hidden");
-      switchNav(navHomeBtn);
-    });
 
     // New Auth DOM References
     // Authentication Mode initialized
@@ -466,10 +490,8 @@
 
     // View Data (Admin Only)
     navAdminBtn.addEventListener("click", () => {
-      homeView.style.display = "none";
-      adminView.style.display = "block";
       settingsModal.classList.add("hidden");
-      switchNav(navAdminBtn);
+      switchView("admin");
       
       // Load and refresh admin data
       fetchAdminStats();
@@ -477,12 +499,33 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    adminAddUserBtn.addEventListener("click", adminAddUser);
-    adminExportBtn.addEventListener("click", exportCSV);
+    manageOperatorsBtn.addEventListener("click", () => {
+      settingsModal.classList.add("hidden");
+      switchView("operators");
+      fetchOperators();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    backToAdminBtn.addEventListener("click", () => {
+      switchView("admin");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    if (adminExportBtn) {
+      adminExportBtn.addEventListener("click", exportCSV);
+    }
     
     // Global function for filter change
     window.fetchAdminScans = fetchAdminScans;
     window.exportCSV = exportCSV;
+    window.fetchOperators = fetchOperators;
+
+    if (addOperatorForm) {
+      addOperatorForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        adminAddUser();
+      });
+    }
 
     // Logout Logic (from settings modal)
     navLogoutBtn.addEventListener("click", () => {
@@ -542,13 +585,22 @@
       localStorage.setItem("matchbox_operator_role", currentUserRole);
 
       showToast(`Welcome, ${currentUserFullName}!`, "success");
-      loginOverlay.style.display = "none";
-      updateAdminButton();
       
-      // Focus carton barcode after login
+      loginOverlay.classList.remove("view-fade-in");
+      void loginOverlay.offsetWidth;
+      loginOverlay.classList.add("view-fade-out");
+      
       setTimeout(() => {
-        if (cartonInput) cartonInput.focus();
-      }, 300);
+        loginOverlay.style.display = "none";
+        loginOverlay.classList.remove("view-fade-out");
+        updateAdminButton();
+        
+        // Focus carton barcode after login
+        if (cartonInput) {
+            cartonInput.focus();
+            cartonInput.classList.add("view-fade-in");
+        }
+      }, 500);
 
     } catch (error) {
       console.error("Auth error:", error);
@@ -736,54 +788,30 @@
     hapticFeedback("success");
     showToast(`Scanned: ${decodedText.substring(0, 30)}`, "success");
 
-    if (isSmartScanMode && savedTarget === "carton") {
-      // Smart Scan Move to Phase 2: Label
-      labelInput.value = ""; // Ensure label is empty for phase 2
-      scannerHintText.textContent = "WAITING...";
-      
-      setTimeout(() => {
-        if (!scannerActive) return;
-        currentScanTarget = "label";
-        scannerModalTitle.textContent = "STEP 2: SCAN LABEL";
-        scannerHintText.textContent = "NOW SCAN THE LABEL BARCODE";
-        hapticFeedback("success");
-        
-        // Visual flash to signal transition
-        const viewfinder = document.querySelector(".scanner-viewfinder");
-        if (viewfinder) {
-          viewfinder.style.border = "4px solid var(--accent-secondary)";
-          setTimeout(() => viewfinder.style.border = "", 500);
-        }
-        
-        // Re-start detection loop after user has had time to move
-        startDetectionLoop();
-      }, 1200); // Increased delay to 1.2s to allow camera movement
-    } else {
-      // Normal scan or end of smart scan
-      closeScanner();
+    // Normal scan
+    closeScanner();
 
-      setTimeout(() => {
-        if (savedTarget === "carton") {
-          // If we scanned a new carton, we MUST clear the old label to avoid false matches
-          if (!isSmartScanMode) labelInput.value = ""; 
-          
-          if (!labelInput.value.trim()) {
-            labelInput.focus();
-          } else {
-            // Both are full, auto-validate
-            performValidation();
-          }
+    setTimeout(() => {
+      if (savedTarget === "carton") {
+        // If we scanned a new carton, we MUST clear the old label to avoid false matches
+        labelInput.value = ""; 
+        
+        if (!labelInput.value.trim()) {
+          labelInput.focus();
         } else {
-          // Just scanned a label
-          if (cartonInput.value.trim()) {
-            performValidation();
-          } else {
-            cartonInput.focus();
-            showToast("Now scan the carton barcode", "info");
-          }
+          // Both are full, auto-validate
+          performValidation();
         }
-      }, 300);
-    }
+      } else {
+        // Just scanned a label
+        if (cartonInput.value.trim()) {
+          performValidation();
+        } else {
+          cartonInput.focus();
+          showToast("Now scan the carton barcode", "info");
+        }
+      }
+    }, 300);
   }
 
   function closeScanner() {
@@ -811,28 +839,11 @@
   }
 
   // ─── Validation ────────────────────────────
-  function performValidation() {
+  async function performValidation() {
     const cartonValue = cartonInput.value.trim();
     const labelValue = labelInput.value.trim();
 
-    if (!cartonValue && !labelValue) {
-      showToast("Please scan both barcodes before validating", "warning");
-      cartonInput.focus();
-      shakeElement(scanCard1);
-      return;
-    }
-    if (!cartonValue) {
-      showToast("Carton barcode is missing", "warning");
-      cartonInput.focus();
-      shakeElement(scanCard1);
-      return;
-    }
-    if (!labelValue) {
-      showToast("Label barcode is missing", "warning");
-      labelInput.focus();
-      shakeElement(scanCard2);
-      return;
-    }
+    if (!cartonValue || !labelValue) return;
 
     // Regex Validation for Company Format
     // Format: ^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$
@@ -922,40 +933,40 @@
 
   // ─── Show Overlay ──────────────────────────
   function showOverlay(isMatch) {
-    resultOverlay.classList.remove("hidden", "success-active", "error-active");
-    resultOverlay.classList.add(isMatch ? "success-active" : "error-active");
+    resultOverlay.classList.remove("hidden", "success-overlay", "error-overlay");
+    resultOverlay.classList.add(isMatch ? "success-overlay" : "error-overlay");
     
     resultOverlayContent.innerHTML = `
       <div class="overlay-icon ${isMatch ? "success-icon" : "error-icon"}">
         ${
           isMatch
-            ? `<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            ? `<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"/>
             </svg>`
-            : `<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            : `<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>`
         }
       </div>
       <div class="overlay-text ${isMatch ? "success-text" : "error-text"}">
-        ${isMatch ? "MATCH!" : "MISMATCH!"}
+        ${isMatch ? "MATCHED" : "REJECTED"}
       </div>
     `;
 
     if (isMatch) spawnConfetti();
+    else hapticFeedback("error");
 
     setTimeout(
       () => {
-        resultOverlayContent.style.animation = "overlayFadeOut 0.3s ease forwards";
-        resultOverlayContent.style.animation = "overlayFadeOut 0.3s ease forwards";
+        resultOverlayContent.style.animation = "overlayFadeOut 0.4s ease forwards";
         setTimeout(() => {
           resultOverlay.classList.add("hidden");
-          resultOverlay.classList.remove("success-active", "error-active");
+          resultOverlay.classList.remove("success-overlay", "error-overlay");
           resultOverlayContent.style.animation = "";
-        }, 300);
+        }, 400);
       },
-      isMatch ? 1500 : 2500
+      isMatch ? 1500 : 2200
     );
   }
 
@@ -1159,17 +1170,26 @@
 
   async function fetchAdminScans() {
     const filter = filterAdminResult.value;
+    const dateFilter = filterAdminDate.value;
     adminScanTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center">SYNCING...</td></tr>';
 
     try {
         let query = supabase
             .from('scans')
             .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
+            .order('created_at', { ascending: false });
 
         if (filter !== 'ALL') {
             query = query.eq('result', filter);
+        }
+
+        if (dateFilter) {
+            const startOfDay = `${dateFilter}T00:00:00.000Z`;
+            const endOfDay = `${dateFilter}T23:59:59.999Z`;
+            query = query.gte('created_at', startOfDay).lte('created_at', endOfDay);
+        } else {
+            // Default limit if no date filter (performance)
+            query = query.limit(100);
         }
 
         const { data, error } = await query;
@@ -1203,10 +1223,10 @@
   }
 
   async function adminAddUser() {
-    const fullName = document.getElementById("newUserFull").value.trim();
-    const email = document.getElementById("newUserEmail").value.trim();
-    const password = document.getElementById("newUserPass").value.trim();
-    const role = document.getElementById("newUserRole").value;
+    const fullName = document.getElementById("opFullName").value.trim();
+    const email = document.getElementById("opEmail").value.trim();
+    const password = document.getElementById("opPassword").value.trim();
+    const role = document.getElementById("opRole").value;
 
     if (!fullName || !email || !password) {
         showToast("Fill all operator details", "warning");
@@ -1218,8 +1238,9 @@
         return;
     }
 
-    adminAddUserBtn.disabled = true;
-    adminAddUserBtn.textContent = "PROVISIONING...";
+    const submitBtn = addOperatorForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "<span>PROVISIONING...</span>";
 
     try {
         // 1. Sign Up in Supabase Auth
@@ -1246,18 +1267,18 @@
         showToast(`Staff account created for ${fullName}`, "success");
         
         // Reset fields
-        document.getElementById("newUserFull").value = "";
-        document.getElementById("newUserEmail").value = "";
-        document.getElementById("newUserPass").value = "";
+        addOperatorForm.reset();
         
-        fetchAdminStats(); // Refresh count
+        // Refresh 
+        fetchAdminStats(); 
+        fetchOperators();
 
     } catch (err) {
         console.error("Provisioning Error:", err);
         showToast(err.message || "Failed to create user", "error");
     } finally {
-        adminAddUserBtn.disabled = false;
-        adminAddUserBtn.textContent = "Create Access Profile";
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "<span>Add Operator</span>";
     }
   }
 
@@ -1290,4 +1311,23 @@
 
   // ─── Start ─────────────────────────────────
   init();
-})();
+
+  async function fetchOperators() {
+    const { data: profiles, error } = await supabase.from('profiles').select('*');
+    if (error) {
+      console.error(error);
+      return;
+    }
+    operatorsListBody.innerHTML = profiles.length ? "" : "<tr><td colspan='3' style='text-align:center'>No operators found</td></tr>";
+    profiles.forEach(p => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${p.full_name || 'N/A'}</td>
+        <td><span class="badge ${p.role === 'admin' ? 'badge-match' : 'badge-mismatch'}">${p.role}</span></td>
+        <td>${p.email}</td>
+      `;
+      operatorsListBody.appendChild(row);
+    });
+  }
+
+})();

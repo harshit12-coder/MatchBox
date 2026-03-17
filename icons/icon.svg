@@ -1,35 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
+    <!-- Deep Navy Background matching app theme -->
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1"/>
-      <stop offset="100%" style="stop-color:#8b5cf6"/>
+      <stop offset="0%" style="stop-color:#020617"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
     </linearGradient>
-    <linearGradient id="box" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
-      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:0.9"/>
+    
+    <!-- Neon Cyan for the Carton outline -->
+    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00f2ff"/>
+      <stop offset="100%" style="stop-color:#007bff"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="6" result="blur"/>
+
+    <!-- Strong Glow Filter for that TRON look -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
   </defs>
-  <!-- Background -->
-  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
-  <!-- Subtle inner glow -->
-  <rect x="20" y="20" width="472" height="472" rx="90" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-  <!-- Box/Carton icon -->
-  <g transform="translate(256, 230)" filter="url(#glow)">
-    <path d="M0 -100 L120 -50 L120 60 L0 110 L-120 60 L-120 -50 Z" fill="none" stroke="url(#box)" stroke-width="8" stroke-linejoin="round"/>
-    <path d="M0 -100 L0 110" stroke="url(#box)" stroke-width="5" opacity="0.5"/>
-    <path d="M-120 -50 L0 0 L120 -50" fill="none" stroke="url(#box)" stroke-width="5" opacity="0.5"/>
-  </g>
-  <!-- Checkmark -->
-  <g transform="translate(280, 310)" filter="url(#glow)">
-    <circle cx="30" cy="30" r="50" fill="rgba(16,185,129,0.25)"/>
-    <circle cx="30" cy="30" r="40" fill="#10b981"/>
-    <polyline points="8,30 25,47 52,13" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Background Shape -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  
+  <!-- Outer Glow Ring -->
+  <rect x="30" y="30" width="452" height="452" rx="100" fill="none" stroke="#00f2ff" stroke-width="2" opacity="0.2"/>
+
+  <!-- Isometric Carton (3D Box) with Neon Outlines -->
+  <g transform="translate(256, 256)" filter="url(#glow)">
+    <!-- Main Box Structure -->
+    <!-- Top Face -->
+    <path d="M0 -140 L160 -60 L0 20 L-160 -60 Z" fill="rgba(0, 242, 255, 0.05)" stroke="url(#neonCyan)" stroke-width="12" stroke-linejoin="round"/>
+    
+    <!-- Front Right Face -->
+    <path d="M0 20 L160 -60 L160 100 L0 180 Z" fill="rgba(0, 242, 255, 0.02)" stroke="url(#neonCyan)" stroke-width="12" stroke-linejoin="round"/>
+    
+    <!-- Front Left Face -->
+    <path d="M0 20 L-160 -60 L-160 100 L0 180 Z" fill="rgba(0, 242, 255, 0.02)" stroke="url(#neonCyan)" stroke-width="12" stroke-linejoin="round"/>
+    
+    <!-- Box Flap Details (The center line) -->
+    <path d="M0 -140 L0 20" stroke="url(#neonCyan)" stroke-width="6" opacity="0.4" stroke-dasharray="10 10"/>
+
+    <!-- Barcode Symbol on the side -->
+    <g transform="translate(-80, 60)">
+       <rect x="0" y="0" width="4" height="40" fill="#00f2ff" opacity="0.8"/>
+       <rect x="10" y="0" width="8" height="40" fill="#00f2ff" opacity="0.8"/>
+       <rect x="25" y="0" width="4" height="40" fill="#00f2ff" opacity="0.8"/>
+       <rect x="35" y="0" width="12" height="40" fill="#00f2ff" opacity="0.8"/>
+    </g>
   </g>
 </svg>

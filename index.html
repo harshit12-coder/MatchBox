@@ -18,7 +18,7 @@
       content="Matchbox — Scan and validate carton barcodes with label barcodes instantly."
     />
 
-    <title>Matchbox — Carton Validation</title>
+    <title>Matchbox</title>
 
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
@@ -101,9 +101,25 @@
         <div class="header-content">
           <div class="logo-group">
             <div class="logo-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" class="tron-logo-svg">
-                <path class="logo-path-bg" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" stroke-width="1" opacity="0.2"></path>
-                <path class="logo-path-main" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              <!-- Animated Glow Layers -->
+              <div class="logo-glow-layer"></div>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" class="tron-logo-svg">
+                <!-- Inner Hexagon -->
+                <path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z" stroke="currentColor" stroke-width="0.5" opacity="0.1" fill="url(#logo-grad)"></path>
+                <!-- Core Crosshair -->
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" class="logo-pulse-path"></circle>
+                <!-- Outer Corners -->
+                <path d="M7 2L3 2 3 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M17 2L21 2 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M7 22L3 22 3 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M17 22L21 22 21 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                <!-- Defining the Gradient -->
+                <defs>
+                  <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.2"></stop>
+                    <stop offset="100%" stop-color="transparent"></stop>
+                  </linearGradient>
+                </defs>
               </svg>
             </div>
             <div>
@@ -111,51 +127,26 @@
               <!-- <p class="app-subtitle">Carton Barcode Validator</p> -->
             </div>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center">
-            <!-- Header actions removed and moved to bottom nav -->
-          </div>
         </div>
       </header>
 
       <!-- Main Content (Home View) -->
       <main class="main-content" id="homeView">
-        <!-- Smart Scan Action -->
-        <div class="smart-scan-section">
-          <button class="smart-scan-btn" id="smartScanBtn">
-            <div class="btn-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-              </svg>
-            </div>
-            <div class="btn-text">
-              <span class="btn-main-text">Smart Scan</span>
-              <!-- <span class="btn-sub-text">Sequential Carton & Label Scan</span> -->
-            </div>
-            <div class="smart-badge">Faster</div>
-            <div class="btn-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </button>
-        </div>
 
         <!-- Stats Strip -->
 
         <div class="stats-strip">
           <div class="stat-card stat-total">
+            <span class="stat-label">Total Scanned</span>
             <span class="stat-value" id="statTotal">0</span>
-            <span class="stat-label">Scanned</span>
           </div>
           <div class="stat-card stat-pass">
+            <span class="stat-label">Pass</span>
             <span class="stat-value" id="statPass">0</span>
-            <span class="stat-label">Passed</span>
           </div>
           <div class="stat-card stat-fail">
+            <span class="stat-label">Fail</span>
             <span class="stat-value" id="statFail">0</span>
-            <span class="stat-label">Failed</span>
           </div>
         </div>
 
@@ -280,10 +271,6 @@
           </div>
         </div>
 
-        <!-- Validate Button -->
-        <button class="validate-btn" id="validateBtn">
-          <span>Validate</span>
-        </button>
 
         <!-- Result Panel -->
         <div class="result-panel hidden" id="resultPanel">
@@ -315,22 +302,7 @@
           </div>
           <div class="history-list" id="historyList"></div>
           <div class="history-empty" id="historyEmpty">
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              opacity="0.3"
-            >
-              <rect x="2" y="2" width="20" height="20" rx="2" />
-              <line x1="6" y1="6" x2="6" y2="18" />
-              <line x1="10" y1="6" x2="10" y2="18" />
-              <line x1="14" y1="6" x2="14" y2="18" />
-              <line x1="18" y1="6" x2="18" y2="18" />
-            </svg>
-            <p>No scans yet. Start scanning!</p>
+            <p style="font-size: 0.6rem;">No scans yet. Start scanning!</p>
           </div>
         </div>
       </main>
@@ -339,28 +311,45 @@
       <main class="main-content" id="adminView" style="display: none;">
         <div class="admin-stats-grid">
             <div class="stat-card">
-                <span class="stat-label">Cloud Records</span>
+                <span class="stat-label">Total Scans</span>
                 <span class="stat-value" id="adminStatTotal">0</span>
             </div>
-            <div class="stat-card" style="border-top: 2px solid var(--success);">
+            <div class="stat-card">
                 <span class="stat-label">Accuracy</span>
                 <span class="stat-value" id="adminStatAccuracy">0%</span>
             </div>
-            <div class="stat-card" style="border-top: 2px solid var(--accent-secondary);">
+            <div class="stat-card" id="manageOperatorsBtn" style="cursor: pointer; border: 1px solid var(--accent-primary);">
                 <span class="stat-label">Staff Count</span>
                 <span class="stat-value" id="adminStatUsers">0</span>
+                <span style="font-size: 0.6rem; color: var(--accent-primary); margin-top: 4px;">Click to Manage</span>
             </div>
         </div>
 
         <div class="panel glass-card">
-            <h3 class="panel-title">Master Activity Monitor</h3>
-            <div class="filters-row">
-                <select id="filterAdminResult" class="scan-input" onchange="fetchAdminScans()" style="padding: 10px; font-size: 0.8rem; height: 40px; width: 60%;">
-                    <option value="ALL">ALL RECORDS</option>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 class="panel-title" style="margin-bottom: 0; border-bottom: none;">Master Activity Monitor</h3>
+                <button class="btn-micro" id="refreshAdminScans" onclick="fetchAdminScans()" style="display: flex; gap: 8px; align-items: center; height: 32px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <!-- <span>Refresh</span> -->
+                </button>
+            </div>
+            <div class="filters-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <select id="filterAdminResult" class="scan-input" onchange="fetchAdminScans()" style="padding: 10px; font-size: 0.8rem; height: 40px; flex: 2; min-width: 120px;">
+                    <option value="ALL">ALL RESULTS</option>
                     <option value="MATCH">MATCH ONLY</option>
                     <option value="MISMATCH">FAILURES ONLY</option>
                 </select>
-                <button id="adminExportBtn" class="btn-micro" style="flex: 1;">Export CSV</button>
+                <input type="date" id="filterAdminDate" class="scan-input" onchange="fetchAdminScans()" style="padding: 10px; font-size: 0.8rem; height: 40px; flex: 2; min-width: 130px; color-scheme: dark;">
+                <button id="adminExportBtn" class="btn-micro" title="Download CSV" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
             </div>
             <div class="table-container">
                 <table id="adminScanTable">
@@ -377,18 +366,66 @@
             </div>
         </div>
 
-        <div class="panel glass-card">
-            <h3 class="panel-title">Add New Operator</h3>
-            <div class="form-grid">
-                <input type="text" id="newUserFull" class="scan-input" placeholder="Full Name">
-                <input type="email" id="newUserEmail" class="scan-input" placeholder="Work Email">
-                <input type="text" id="newUserPass" class="scan-input" placeholder="Password (Min 6)">
-                <select id="newUserRole" class="scan-input">
-                    <option value="user">Operator</option>
-                    <option value="admin">Administrator</option>
-                </select>
+      </main>
+
+      <!-- Operators Management View (SPA) -->
+      <main class="main-content" id="operatorsView" style="display: none;">
+        <div class="glass-card panel">
+          <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px;">
+            <button class="header-action" id="backToAdminBtn" style="transform: rotate(0deg); width: 32px; height: 32px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <h2 class="panel-title" style="margin-bottom: 0;">Manage Operators</h2>
+          </div>
+
+          <form id="addOperatorForm" class="auth-form" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-subtle);">
+            <div class="input-group">
+              <label>Full Name</label>
+              <div class="input-field">
+                <input type="text" id="opFullName" placeholder="John Doe" required />
+              </div>
             </div>
-            <button id="adminAddUserBtn" class="validate-btn" style="margin-top: 15px;">Create Access Profile</button>
+            <div class="input-group">
+              <label>Work Email</label>
+              <div class="input-field">
+                <input type="email" id="opEmail" placeholder="operator@org.com" required />
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label>Password</label>
+                <div class="input-field">
+                  <input type="password" id="opPassword" placeholder="••••••••" required />
+                </div>
+              </div>
+              <div class="input-group">
+                <label>Role</label>
+                <div class="input-field">
+                  <select id="opRole" style="width: 100%; background: transparent; border: none; color: white; padding: 10px; outline: none;">
+                    <option value="user" style="background: #0f172a;">Operator</option>
+                    <option value="admin" style="background: #0f172a;">Admin</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="auth-submit-btn" style="padding: 12px; margin-top: 20px;">
+              <span>Add Operator</span>
+            </button>
+          </form>
+
+          <div class="table-container" style="margin-top: 30px;">
+            <table id="operatorsTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Email</th>
+                </tr>
+              </thead>
+              <tbody id="operatorsListBody">
+              </tbody>
+            </table>
+          </div>
         </div>
       </main>
     </div>
@@ -454,7 +491,7 @@
     <!-- Settings Modal -->
     <div class="scanner-modal hidden" id="settingsModal">
       <div class="scanner-modal-header">
-        <h3 class="scanner-modal-title">Server Settings</h3>
+        <h3 class="scanner-modal-title">App Settings</h3>
         <button class="scanner-close-btn" id="settingsCloseBtn">
           <svg
             width="24"
@@ -474,31 +511,6 @@
       <div
         style="padding: 24px; display: flex; flex-direction: column; gap: 20px"
       >
-        <div>
-          <label
-            style="
-              display: block;
-              font-size: 0.8rem;
-              color: var(--text-secondary);
-              margin-bottom: 8px;
-            "
-            >Sync Server URL</label
-          >
-          <input
-            type="text"
-            id="serverUrlInput"
-            class="scan-input"
-            placeholder="http://192.168.1.5:3000"
-            style="padding-right: 18px"
-          />
-          <p
-            style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px"
-          >
-            Enter the IP and port of the Office Server PC.
-          </p>
-        </div>
-        <button class="validate-btn" id="saveSettingsBtn">Save Settings</button>
-
         <button class="validate-btn" id="navLogoutBtn" style="margin-top: 10px; background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border);">
           Logout Account
         </button>
@@ -538,7 +550,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
-        <span>Desk</span>
+        <span>Dashboard</span>
       </button>
     </nav>
 
