@@ -340,11 +340,18 @@
       if (val) {
         scanCard1.classList.add("done");
         
-        // Auto-transition to label if format matches (for hardware scanners without Enter suffix)
-        const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/;
-        if (companyRegex.test(val)) {
-            labelInput.focus();
-            SoundEngine.scan(); // Play scan sound for magic transition
+        // Auto-transition logic:
+        // 1. If it matches the specific company format
+        // 2. OR if it reaches a typical barcode length (e.g., 10+ characters)
+        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/;
+        if (companyRegex.test(val) || val.length >= 14) {
+            // Use a tiny timeout to ensure scanner has finished typing before moving
+            setTimeout(() => {
+                if (document.activeElement === cartonInput) {
+                    labelInput.focus();
+                    SoundEngine.scan(); 
+                }
+            }, 50);
         }
       } else {
         scanCard1.classList.remove("done");
@@ -356,10 +363,15 @@
       if (val) {
         scanCard2.classList.add("done");
 
-        // Auto-validate if format matches and carton is present
-        const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/;
-        if (companyRegex.test(val) && cartonInput.value.trim()) {
-            performValidation();
+        // Auto-validate logic:
+        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/;
+        if ((companyRegex.test(val) || val.length >= 14) && cartonInput.value.trim()) {
+            // Small delay to ensure the field is fully populated before validation
+            setTimeout(() => {
+                if (labelInput.value.trim().length >= 14) {
+                    performValidation();
+                }
+            }, 100);
         }
       } else {
         scanCard2.classList.remove("done");
