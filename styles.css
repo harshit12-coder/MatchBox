@@ -164,6 +164,42 @@ body::after {
   color: var(--text-secondary);
 }
 
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass Glint Sweep Effect */
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: -150%;
+  left: -50%;
+  width: 25%;
+  height: 400%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(35deg);
+  pointer-events: none;
+  animation: glintSweep 8s infinite ease-in-out;
+}
+
+@keyframes glintSweep {
+  0% { left: -50%; top: -150%; }
+  20% { left: 150%; top: 50%; }
+  100% { left: 150%; top: 50%; }
+}
+
 .status-app-name {
   font-weight: 700;
   color: var(--accent-primary);
@@ -418,6 +454,35 @@ body::after {
 }
 
 /* ============================================
+   CUSTOM SCROLLBAR (TRON THEME)
+   ============================================ */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 255, 0.2);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary);
+}
+
+/* ============================================
+   CORE LAYOUT
+   ============================================ */
+/* The original html and body styles are kept as they define the base page layout.
+   The provided snippet for html, body seems to be a new glass-card like style,
+   which is not suitable for the entire html/body elements.
+   Assuming it was meant to be a new utility class or a modification to an existing card.
+   For now, it's not applied to html, body directly to avoid breaking the layout. */
+
+/* ============================================
    SCAN CARDS
    ============================================ */
 .scan-card {
@@ -578,6 +643,12 @@ body::after {
   box-shadow:
     0 0 0 3px var(--accent-glow),
     0 0 20px rgba(99, 102, 241, 0.1);
+  animation: inputPulse 2s infinite ease-in-out;
+}
+
+@keyframes inputPulse {
+  0%, 100% { border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--accent-glow); }
+  50% { border-color: #ffffff; box-shadow: 0 0 15px var(--accent-glow); }
 }
 
 .scan-input.valid {
@@ -1043,11 +1114,19 @@ body::after {
 .result-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 5000;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  background: rgba(2, 6, 23, 0);
+  backdrop-filter: blur(0px);
+  transition: background 0.5s ease, backdrop-filter 0.5s ease;
+}
+
+.result-overlay:not(.hidden) {
+  background: rgba(2, 6, 23, 0.6);
+  backdrop-filter: blur(12px);
 }
 
 .result-overlay.hidden {
@@ -1058,8 +1137,21 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  animation: overlayPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 24px;
+  animation: overlayCinematicIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes overlayCinematicIn {
+  from { 
+    opacity: 0; 
+    transform: scale(1.1); 
+    filter: blur(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1);
+    filter: blur(0);
+  }
 }
 
 .result-overlay-content .overlay-icon {
@@ -1096,22 +1188,23 @@ body::after {
 }
 
 .result-overlay-content .overlay-text {
-  font-size: var(--font-2xl);
-  font-weight: 800;
+  font-size: 2.5rem;
+  font-weight: 900;
   text-align: center;
+  letter-spacing: 12px;
+  text-transform: uppercase;
+  margin-right: -12px; /* Offset for letter spacing alignment */
 }
 
 .result-overlay-content .overlay-text.success-text {
   color: var(--success);
+  text-shadow: 0 0 20px var(--success-glow);
 }
 .result-overlay-content .overlay-text.error-text {
   color: var(--error);
+  text-shadow: 0 0 20px var(--error-glow);
 }
 
-@keyframes overlayPop {
-  0% { opacity: 0; transform: scale(0.8); }
-  100% { opacity: 1; transform: scale(1); }
-}
 
 /* Optimized Smooth Glow */
 .success-icon {
@@ -1161,10 +1254,12 @@ body::after {
   0% {
     opacity: 1;
     transform: scale(1);
+    filter: blur(0);
   }
   100% {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(1.1);
+    filter: blur(15px);
   }
 }
 
@@ -1226,12 +1321,27 @@ body::after {
 .history-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--bg-glass);
+  gap: 15px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  animation: slideUp 0.3s ease;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: revealIn 0.5s ease-out forwards;
+}
+
+@keyframes revealIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(15px) scale(0.98); 
+    filter: blur(10px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 .history-item-status {
@@ -1935,6 +2045,43 @@ body::after {
   gap: 16px;
 }
 
+.validate-btn {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--font-base);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.validate-btn::before, .auth-submit-btn::before {
+  content: "";
+  position: absolute;
+  top: -150%;
+  left: -50%;
+  width: 30%;
+  height: 400%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(35deg);
+  pointer-events: none;
+  animation: glintSweep 5s infinite ease-in-out;
+}
+
 .signup-fields-extra {
   display: none;
   flex-direction: column;
@@ -1954,6 +2101,8 @@ body::after {
   font-weight: 800;
   font-size: 1.1rem;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;

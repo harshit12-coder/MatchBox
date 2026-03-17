@@ -894,14 +894,20 @@
     const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/;
     
     if (!companyRegex.test(cartonValue)) {
-      showToast("Invalid Carton Format!", "warning");
       shakeElement(scanCard1);
+      showResult(false, cartonValue, labelValue, "Format Error ⚠", "Carton barcode does not match company guidelines.");
+      showOverlay(false, "INVALID CARTON");
+      SoundEngine.error();
+      setTimeout(resetForm, 2200);
       return;
     }
     
     if (!companyRegex.test(labelValue)) {
-      showToast("Invalid Label Format!", "warning");
       shakeElement(scanCard2);
+      showResult(false, cartonValue, labelValue, "Format Error ⚠", "Label barcode does not match company guidelines.");
+      showOverlay(false, "INVALID LABEL");
+      SoundEngine.error();
+      setTimeout(resetForm, 2200);
       return;
     }
 
@@ -953,7 +959,7 @@
   }
 
   // ─── Show Result Panel ─────────────────────
-  function showResult(isMatch, carton, label) {
+  function showResult(isMatch, carton, label, customTitle = null, customMsg = null) {
     resultPanel.classList.remove("hidden", "success", "error");
     resultPanel.classList.add(isMatch ? "success" : "error");
 
@@ -962,23 +968,25 @@
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"/>
         </svg>`;
-      resultTitle.textContent = "Validation Passed ✓";
-      resultMessage.textContent = `Both barcodes match: "${truncate(carton, 30)}"`;
+      resultTitle.textContent = customTitle || "Validation Passed ✓";
+      resultMessage.textContent = customMsg || `Both barcodes match: "${truncate(carton, 30)}"`;
     } else {
       resultIconContainer.innerHTML = `
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>`;
-      resultTitle.textContent = "Validation Failed ✗";
-      resultMessage.textContent = `Carton: "${truncate(carton, 20)}" ≠ Label: "${truncate(label, 20)}"`;
+      resultTitle.textContent = customTitle || "Validation Failed ✗";
+      resultMessage.textContent = customMsg || `Carton: "${truncate(carton, 20)}" ≠ Label: "${truncate(label, 20)}"`;
     }
   }
 
   // ─── Show Overlay ──────────────────────────
-  function showOverlay(isMatch) {
+  function showOverlay(isMatch, customTitle = null) {
     resultOverlay.classList.remove("hidden", "success-overlay", "error-overlay");
     resultOverlay.classList.add(isMatch ? "success-overlay" : "error-overlay");
+    
+    const displayTitle = customTitle || (isMatch ? "MATCHED" : "REJECTED");
     
     resultOverlayContent.innerHTML = `
       <div class="overlay-icon ${isMatch ? "success-icon" : "error-icon"}">
@@ -994,7 +1002,7 @@
         }
       </div>
       <div class="overlay-text ${isMatch ? "success-text" : "error-text"}">
-        ${isMatch ? "MATCHED" : "REJECTED"}
+        ${displayTitle}
       </div>
     `;
 
