@@ -235,23 +235,20 @@ body::after {
 }
 
 .header-logout-btn {
-  background: rgba(255, 94, 94, 0.05);
-  border: 1px solid rgba(255, 94, 94, 0.2);
-  color: #ff5e5e;
-  padding: 8px;
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  padding: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  outline: none;
 }
 
 .header-logout-btn:hover {
-  background: rgba(255, 94, 94, 0.15);
-  border-color: #ff5e5e;
-  box-shadow: 0 0 12px rgba(255, 94, 94, 0.3);
-  transform: scale(1.05);
+  transform: scale(1.15);
+  opacity: 0.8;
 }
 
 .logo-group {
