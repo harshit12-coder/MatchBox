@@ -38,6 +38,7 @@
   const navHomeBtn = document.getElementById("navHomeBtn");
   const navAdminBtn = document.getElementById("navAdminBtn");
   const navLogoutBtn = document.getElementById("navLogoutBtn");
+  const headerLogoutBtn = document.getElementById("headerLogoutBtn");
 
   // Settings DOM
   const settingsModal = document.getElementById("settingsModal");
@@ -549,21 +550,42 @@
       });
     }
 
-    // Logout Logic (from settings modal)
-    navLogoutBtn.addEventListener("click", () => {
+    // Standard logout function
+    const performLogout = () => {
       if (confirm("Are you sure you want to logout?")) {
+        // Clear all session state
         currentUser = "";
         currentUserRole = "";
+        currentUserFullName = "";
+        
         localStorage.removeItem("matchbox_operator");
         localStorage.removeItem("matchbox_operator_role");
+        localStorage.removeItem("matchbox_operator_name");
+        
         updateAdminButton();
+        
+        // UI Reset
         settingsModal.classList.add("hidden");
+        
+        // Show login overlay with animation
         loginOverlay.style.display = "flex";
+        loginOverlay.classList.remove("view-fade-out");
+        loginOverlay.classList.add("view-fade-in");
+        
         loginUsernameInput.value = "";
         loginPasswordInput.value = "";
+        
         showToast("Logged out successfully", "success");
+        
+        // Trigger a fresh state check
+        setTimeout(() => {
+          if (loginUsernameInput) loginUsernameInput.focus();
+        }, 500);
       }
-    });
+    };
+
+    if (navLogoutBtn) navLogoutBtn.addEventListener("click", performLogout);
+    if (headerLogoutBtn) headerLogoutBtn.addEventListener("click", performLogout);
   }
 
   async function handleAuth() {

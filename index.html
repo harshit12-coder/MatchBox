@@ -48,28 +48,45 @@
 
       <div class="auth-card glass-card">
         <div id="loginHeader" class="auth-header">
-          <div class="auth-logo">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" class="tron-logo-svg">
-              <path class="logo-path-bg" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" stroke-width="1" opacity="0.2"></path>
-              <path class="logo-path-main" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
+          <div class="auth-logo-container">
+            <div class="auth-logo-glow"></div>
+            <div class="auth-logo">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" class="tron-logo-svg">
+                <path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z" stroke="currentColor" stroke-width="1" opacity="0.2" fill="url(#auth-logo-grad)"></path>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" class="logo-pulse-path"></circle>
+                <path d="M7 2L3 2 3 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                <path d="M17 2L21 2 21 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                <path d="M7 22L3 22 3 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                <path d="M17 22L21 22 21 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                <defs>
+                  <linearGradient id="auth-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.3"></stop>
+                    <stop offset="100%" stop-color="transparent"></stop>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
           </div>
           <div class="auth-title-group">
             <h1 id="authTitle">Matchbox</h1>
+            <p class="auth-protocol-text">IDENTITY PROTOCOL REQUIRED</p>
           </div>
         </div>
 
+        <div class="auth-scanner-line"></div>
+
         <!-- Auth Message -->
-        <div style="text-align: center; margin-bottom: 20px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">
-          Operator Authorization
+        <div class="auth-status-bar">
+          <div class="status-dot"></div>
+          <span>SECURE ACCESS GATEWAY</span>
         </div>
 
         <div class="auth-form">
           <!-- Login Handle -->
           <div id="usernameGroup" class="input-group">
-            <label id="userLabel">Work Email</label>
+            <label id="userLabel">Email</label>
             <div class="input-field">
-              <input type="email" id="loginUsername" placeholder="yourname@org.com" />
+              <input type="email" id="loginUsername" placeholder="Enter your email..." />
               <div class="input-focus-border"></div>
             </div>
           </div>
@@ -126,6 +143,15 @@
               <h1 class="app-title">Matchbox</h1>
               <!-- <p class="app-subtitle">Carton Barcode Validator</p> -->
             </div>
+          </div>
+          <div class="header-actions">
+            <button class="header-logout-btn" id="headerLogoutBtn" title="Logout Session">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
           </div>
         </div>
       </header>
