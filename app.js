@@ -429,16 +429,19 @@
     });
     scannerCloseBtn.addEventListener("click", closeScanner);
 
-    clearHistoryBtn.addEventListener("click", () => {
-      history = [];
-      stats = { total: 0, pass: 0, fail: 0 };
-      saveState();
-      renderHistory();
-      renderStats();
-      showToast("History cleared", "success");
-    });
+    if (clearHistoryBtn) {
+      clearHistoryBtn.addEventListener("click", () => {
+        history = [];
+        stats = { total: 0, pass: 0, fail: 0 };
+        saveState();
+        renderHistory();
+        renderStats();
+        showToast("History cleared", "success");
+      });
+    }
 
     // Navigation Helper
+
     function switchNav(activeBtn) {
       [navHomeBtn, navSettingsBtn, navAdminBtn].forEach(btn => {
         if(btn) btn.classList.remove("active");
@@ -489,16 +492,20 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    logoGroup.style.cursor = "pointer";
-    logoGroup.addEventListener("click", () => {
-      settingsModal.classList.remove("hidden");
-      switchNav(navSettingsBtn);
-    });
+    if (logoGroup) {
+      logoGroup.style.cursor = "pointer";
+      logoGroup.addEventListener("click", () => {
+        settingsModal.classList.remove("hidden");
+        switchNav(navSettingsBtn);
+      });
+    }
 
-    settingsCloseBtn.addEventListener("click", () => {
-      settingsModal.classList.add("hidden");
-      switchNav(navHomeBtn);
-    });
+    if (settingsCloseBtn) {
+      settingsCloseBtn.addEventListener("click", () => {
+        settingsModal.classList.add("hidden");
+        switchNav(navHomeBtn);
+      });
+    }
 
 
     // New Auth DOM References
@@ -522,17 +529,21 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    manageOperatorsBtn.addEventListener("click", () => {
-      settingsModal.classList.add("hidden");
-      switchView("operators");
-      fetchOperators();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    if (manageOperatorsBtn) {
+      manageOperatorsBtn.addEventListener("click", () => {
+        settingsModal.classList.add("hidden");
+        switchView("operators");
+        fetchOperators();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
 
-    backToAdminBtn.addEventListener("click", () => {
-      switchView("admin");
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    if (backToAdminBtn) {
+      backToAdminBtn.addEventListener("click", () => {
+        switchView("admin");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
 
     if (adminExportBtn) {
       adminExportBtn.addEventListener("click", exportCSV);
@@ -1074,6 +1085,8 @@
 
   // ─── Render History ────────────────────────
   function renderHistory() {
+    if (!historyList || !historyEmpty) return;
+
     if (history.length === 0) {
       historyList.innerHTML = "";
       historyEmpty.classList.remove("hidden");
