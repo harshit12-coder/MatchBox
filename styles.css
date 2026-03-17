@@ -1925,41 +1925,32 @@ body::after {
   stroke-linejoin: round;
   stroke-dasharray: 200;
   stroke-dashoffset: 200;
-  animation: drawCubeFace 6s infinite ease-in-out;
+  opacity: 0;
+  animation: drawCubeFace 2s ease-out forwards;
 }
 
 .cube-face.top {
-  animation-delay: 0s;
+  animation-delay: 0.2s;
 }
 
 .cube-face.left {
-  animation-delay: 1.5s;
+  animation-delay: 0.8s;
 }
 
 .cube-face.right {
-  animation-delay: 3s;
+  animation-delay: 1.4s;
 }
 
 @keyframes drawCubeFace {
   0% { 
     stroke-dashoffset: 200; 
     fill: transparent;
-    opacity: 0.1;
-  }
-  30% { 
-    stroke-dashoffset: 0; 
-    fill: rgba(0, 242, 255, 0.05);
-    opacity: 1;
-  }
-  70% { 
-    stroke-dashoffset: 0; 
-    fill: rgba(0, 242, 255, 0.2);
-    opacity: 1;
+    opacity: 0;
   }
   100% { 
-    stroke-dashoffset: -200; 
-    fill: transparent;
-    opacity: 0.1;
+    stroke-dashoffset: 0; 
+    fill: rgba(0, 242, 255, 0.12);
+    opacity: 1;
   }
 }
 
