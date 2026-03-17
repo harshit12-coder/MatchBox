@@ -885,17 +885,15 @@
 
     hapticFeedback(isMatch ? "success" : "error");
 
-    // Sync to server
-    if (serverUrl) {
-      sendScanToServer(record);
-    }
+    // Sync to Supabase
+    sendScanToServer(record);
 
     // Auto-reset form after a delay so user can see result
     setTimeout(
       () => {
         resetForm();
       },
-      isMatch ? 1500 : 2500 // Faster reset for match
+      isMatch ? 800 : 2000 // Faster reset (800ms for match, 2s for mismatch)
     );
   }
 
