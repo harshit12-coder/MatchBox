@@ -1884,88 +1884,64 @@ body::after {
   margin-bottom: 20px;
 }
 
-.auth-logo-wrapper {
+.auth-logo-v2 {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 5px;
 }
 
-.auth-logo-orb {
+.auth-logo-glow-v2 {
   position: absolute;
-  width: 50px;
-  height: 50px;
-  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  width: 60px;
+  height: 60px;
+  background: var(--accent-primary);
   border-radius: 50%;
-  animation: orbExhale 4s infinite alternate ease-in-out;
-  opacity: 0.6;
+  filter: blur(40px);
+  opacity: 0.15;
+  animation: breathingGlow 4s infinite alternate ease-in-out;
 }
 
-.auth-logo {
-  position: relative;
-  z-index: 2;
+.tron-icon-v2 {
   color: var(--accent-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+  animation: floatSubtle 6s infinite ease-in-out;
 }
 
-.logo-hex-frame {
-  transform-origin: center;
-  animation: hexSpin 20s linear infinite;
+.hex-path-v2 {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawStroke 2s ease-out forwards;
 }
 
-.logo-core-box {
-  transform-origin: center;
-  animation: coreBreathe 3s infinite ease-in-out;
-  filter: drop-shadow(0 0 5px var(--accent-primary));
+@keyframes breathingGlow {
+  from { opacity: 0.1; transform: scale(1); }
+  to { opacity: 0.25; transform: scale(1.5); }
 }
 
-.logo-accents {
-  animation: accentPulse 2s infinite alternate ease-in-out;
+@keyframes floatSubtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
-.logo-center-pulse {
-  animation: centerBeacon 1s infinite alternate ease-out;
+@keyframes drawStroke {
+  to { stroke-dashoffset: 0; }
 }
 
-@keyframes orbExhale {
-  from { transform: scale(0.8); opacity: 0.4; }
-  to { transform: scale(1.6); opacity: 0.8; }
-}
-
-@keyframes hexSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes coreBreathe {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 1; }
-}
-
-@keyframes accentPulse {
-  from { opacity: 0.2; stroke-width: 1; }
-  to { opacity: 1; stroke-width: 2.5; }
-}
-
-@keyframes centerBeacon {
-  from { opacity: 0.3; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1.2); }
-}
-
-.auth-title-premium {
-  font-size: 2.2rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 5px !important;
-  background: linear-gradient(to bottom, #ffffff 30%, var(--accent-primary));
+.auth-title-v2 {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-top: 10px;
+  background: linear-gradient(to bottom, #ffffff, #94a3b8);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-top: 5px;
+  opacity: 0.9;
 }
 
 .auth-status-label {
