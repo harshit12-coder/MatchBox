@@ -1884,7 +1884,7 @@ body::after {
   margin-bottom: 20px;
 }
 
-.auth-logo-v2 {
+.cube-logo-container {
   position: relative;
   width: 120px;
   height: 120px;
@@ -1894,54 +1894,80 @@ body::after {
   margin-bottom: 5px;
 }
 
-.auth-logo-glow-v2 {
+.cube-glow {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   background: var(--accent-primary);
   border-radius: 50%;
-  filter: blur(40px);
-  opacity: 0.15;
-  animation: breathingGlow 4s infinite alternate ease-in-out;
+  filter: blur(50px);
+  opacity: 0.1;
+  animation: pulseNeon 4s infinite alternate ease-in-out;
 }
 
-.tron-icon-v2 {
-  color: var(--accent-primary);
-  filter: drop-shadow(0 0 10px var(--accent-glow));
-  animation: floatSubtle 6s infinite ease-in-out;
+.neon-cube-svg {
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 12px var(--accent-glow));
 }
 
-.hex-path-v2 {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: drawStroke 2s ease-out forwards;
+.cube-bg-outline {
+  stroke: var(--accent-primary);
+  stroke-width: 1;
+  fill: transparent;
+  opacity: 0.08;
 }
 
-@keyframes breathingGlow {
-  from { opacity: 0.1; transform: scale(1); }
-  to { opacity: 0.25; transform: scale(1.5); }
+.cube-inner-lines {
+  stroke: var(--accent-primary);
+  stroke-width: 1.5;
+  fill: transparent;
+  stroke-linecap: round;
+  opacity: 0.4;
+  stroke-dasharray: 200;
+  stroke-dashoffset: 0;
+  animation: traceLoop 6s infinite ease-in-out;
 }
 
-@keyframes floatSubtle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.cube-trace-line {
+  stroke: var(--accent-primary);
+  stroke-width: 3;
+  fill: transparent;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: traceDraw 3s infinite cubic-bezier(0.77, 0, 0.175, 1);
+  filter: drop-shadow(0 0 5px var(--accent-primary));
 }
 
-@keyframes drawStroke {
-  to { stroke-dashoffset: 0; }
+@keyframes pulseNeon {
+  from { opacity: 0.08; transform: scale(0.9); }
+  to { opacity: 0.2; transform: scale(1.4); }
+}
+
+@keyframes traceDraw {
+  0% { stroke-dashoffset: 400; opacity: 0.2; }
+  50% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: -400; opacity: 0.2; }
+}
+
+@keyframes traceLoop {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
 }
 
 .auth-title-v2 {
   font-size: 2.2rem;
-  font-weight: 900;
-  letter-spacing: 6px;
+  font-weight: 950;
+  letter-spacing: 8px;
   text-transform: uppercase;
-  margin-top: 10px;
-  background: linear-gradient(to bottom, #ffffff, #94a3b8);
+  margin-top: 15px;
+  background: linear-gradient(to bottom, #ffffff, var(--accent-secondary));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  opacity: 0.9;
+  text-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 .auth-status-label {
