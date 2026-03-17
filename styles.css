@@ -1892,6 +1892,12 @@ body::after {
   align-items: center;
   justify-content: center;
   margin-bottom: 5px;
+  animation: cubeRotate 20s linear infinite;
+}
+
+@keyframes cubeRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .cube-glow {
@@ -1908,53 +1914,58 @@ body::after {
 .neon-cube-svg {
   position: relative;
   z-index: 2;
-  filter: drop-shadow(0 0 12px var(--accent-glow));
+  filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
-.cube-bg-outline {
-  stroke: var(--accent-primary);
-  stroke-width: 1;
+.cube-face {
   fill: transparent;
-  opacity: 0.08;
-}
-
-.cube-inner-lines {
   stroke: var(--accent-primary);
-  stroke-width: 1.5;
-  fill: transparent;
-  stroke-linecap: round;
-  opacity: 0.4;
-  stroke-dasharray: 200;
-  stroke-dashoffset: 0;
-  animation: traceLoop 6s infinite ease-in-out;
-}
-
-.cube-trace-line {
-  stroke: var(--accent-primary);
-  stroke-width: 3;
-  fill: transparent;
+  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 400;
-  stroke-dashoffset: 400;
-  animation: traceDraw 3s infinite cubic-bezier(0.77, 0, 0.175, 1);
-  filter: drop-shadow(0 0 5px var(--accent-primary));
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: drawCubeFace 6s infinite ease-in-out;
+}
+
+.cube-face.top {
+  animation-delay: 0s;
+}
+
+.cube-face.left {
+  animation-delay: 1.5s;
+}
+
+.cube-face.right {
+  animation-delay: 3s;
+}
+
+@keyframes drawCubeFace {
+  0% { 
+    stroke-dashoffset: 200; 
+    fill: transparent;
+    opacity: 0.1;
+  }
+  30% { 
+    stroke-dashoffset: 0; 
+    fill: rgba(0, 242, 255, 0.05);
+    opacity: 1;
+  }
+  70% { 
+    stroke-dashoffset: 0; 
+    fill: rgba(0, 242, 255, 0.2);
+    opacity: 1;
+  }
+  100% { 
+    stroke-dashoffset: -200; 
+    fill: transparent;
+    opacity: 0.1;
+  }
 }
 
 @keyframes pulseNeon {
-  from { opacity: 0.08; transform: scale(0.9); }
-  to { opacity: 0.2; transform: scale(1.4); }
-}
-
-@keyframes traceDraw {
-  0% { stroke-dashoffset: 400; opacity: 0.2; }
-  50% { stroke-dashoffset: 0; opacity: 1; }
-  100% { stroke-dashoffset: -400; opacity: 0.2; }
-}
-
-@keyframes traceLoop {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.8; }
+  from { opacity: 0.05; transform: scale(0.8); }
+  to { opacity: 0.25; transform: scale(1.5); }
 }
 
 .auth-title-v2 {
