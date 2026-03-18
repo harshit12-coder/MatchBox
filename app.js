@@ -384,7 +384,7 @@
         // Auto-transition logic:
         // 1. If it matches the specific company format
         // 2. OR if it reaches a typical barcode length (e.g., 10+ characters)
-        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/;
+        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/i;
         if (companyRegex.test(val) || val.length >= 14) {
             // Use a tiny timeout to ensure scanner has finished typing before moving
             setTimeout(() => {
@@ -405,7 +405,7 @@
         scanCard2.classList.add("done");
 
         // Auto-validate logic:
-        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/;
+        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/i;
         if ((companyRegex.test(val) || val.length >= 14) && cartonInput.value.trim()) {
             // Small delay to ensure the field is fully populated before validation
             setTimeout(() => {
@@ -900,9 +900,9 @@
 
     if (!cartonValue || !labelValue) return;
 
-    // Regex Validation for Company Format
+    // Regex Validation for Company Format - Case Insensitive
     // Format: ^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$
-    const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/;
+    const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/i;
     
     if (!companyRegex.test(cartonValue)) {
       shakeElement(scanCard1);
@@ -922,10 +922,12 @@
       return;
     }
 
-    // Logic: Exact match OR the label QR contains the carton barcode value
+    // Logic: Exact match OR the label QR contains the carton barcode value (Case Insensitive)
+    const normalizedCarton = cartonValue.toLowerCase();
+    const normalizedLabel = labelValue.toLowerCase();
     const isMatch =
-      cartonValue === labelValue ||
-      (cartonValue.length >= 3 && labelValue.includes(cartonValue));
+      normalizedCarton === normalizedLabel ||
+      (normalizedCarton.length >= 3 && normalizedLabel.includes(normalizedCarton));
 
     stats.total++;
     if (isMatch) {
