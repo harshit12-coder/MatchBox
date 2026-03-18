@@ -64,6 +64,12 @@
   const filterAdminDate = document.getElementById("filterAdminDate");
   const adminExportBtn = document.getElementById("adminExportBtn");
 
+  const operatorHistoryView = document.getElementById("operatorHistoryView");
+  const navOperatorHistoryBtn = document.getElementById("navOperatorHistoryBtn");
+  const filterOperatorHistoryResult = document.getElementById("filterOperatorHistoryResult");
+  const filterOperatorHistoryDate = document.getElementById("filterOperatorHistoryDate");
+  const operatorHistoryTableBody = document.getElementById("operatorHistoryTableBody");
+
   const adminStatTotal = document.getElementById("adminStatTotal");
   const adminStatAccuracy = document.getElementById("adminStatAccuracy");
   const adminStatUsers = document.getElementById("adminStatUsers");
@@ -163,6 +169,11 @@
     // Default admin date to today
     if (filterAdminDate) {
       filterAdminDate.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Default operator history date to today
+    if (filterOperatorHistoryDate) {
+      filterOperatorHistoryDate.value = new Date().toISOString().split('T')[0];
     }
 
     if (window.particlesJS && document.getElementById('particles-js')) {
@@ -443,14 +454,14 @@
     // Navigation Helper
 
     function switchNav(activeBtn) {
-      [navHomeBtn, navSettingsBtn, navAdminBtn].forEach(btn => {
+      [navHomeBtn, navSettingsBtn, navAdminBtn, navOperatorHistoryBtn].forEach(btn => {
         if(btn) btn.classList.remove("active");
       });
       if(activeBtn) activeBtn.classList.add("active");
     }
 
     function switchView(viewId) {
-      const views = [homeView, adminView, operatorsView];
+      const views = [homeView, adminView, operatorsView, operatorHistoryView];
       views.forEach(v => {
         if (v) {
           v.classList.remove("view-fade-in");
@@ -458,7 +469,9 @@
         }
       });
 
-      const activeView = (viewId === "home") ? homeView : (viewId === "admin" ? adminView : operatorsView);
+      const activeView = (viewId === "home") ? homeView : 
+                         (viewId === "admin" ? adminView : 
+                         (viewId === "operators" ? operatorsView : operatorHistoryView));
       if (activeView) {
         activeView.style.display = "flex";
         activeView.classList.add("view-fade-in");
@@ -468,6 +481,7 @@
       document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
       if (viewId === "home") navHomeBtn.classList.add("active");
       if (viewId === "admin" || viewId === "operators") navAdminBtn.classList.add("active");
+      if (viewId === "operatorHistory") navOperatorHistoryBtn.classList.add("active");
     }
 
     navSettingsBtn.addEventListener("click", () => {
@@ -503,7 +517,14 @@
     if (settingsCloseBtn) {
       settingsCloseBtn.addEventListener("click", () => {
         settingsModal.classList.add("hidden");
-        switchNav(navHomeBtn);
+        // Automatically set correct nav active state depending on view
+        if (adminView.style.display === "flex" || adminView.style.display === "block") {
+            switchNav(navAdminBtn);
+        } else if (operatorHistoryView.style.display === "flex" || operatorHistoryView.style.display === "block") {
+            switchNav(navOperatorHistoryBtn);
+        } else {
+            switchNav(navHomeBtn);
+        }
       });
     }
 
@@ -538,6 +559,15 @@
       });
     }
 
+    if (navOperatorHistoryBtn) {
+      navOperatorHistoryBtn.addEventListener("click", () => {
+        settingsModal.classList.add("hidden");
+        switchView("operatorHistory");
+        fetchOperatorHistory();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
     if (backToAdminBtn) {
       backToAdminBtn.addEventListener("click", () => {
         switchView("admin");
@@ -553,6 +583,7 @@
     window.fetchAdminScans = fetchAdminScans;
     window.exportCSV = exportCSV;
     window.fetchOperators = fetchOperators;
+    window.fetchOperatorHistory = fetchOperatorHistory;
 
     if (addOperatorForm) {
       addOperatorForm.addEventListener("submit", (e) => {
@@ -1374,6 +1405,64 @@
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  }
+
+  async function fetchOperatorHistory() {
+    if (!operatorHistoryTableBody) return;
+    
+    const filter = filterOperatorHistoryResult.value;
+    const dateFilter = filterOperatorHistoryDate.value;
+    operatorHistoryTableBody.innerHTML = '<tr><td colspan="3" style="text-align:center">SYNCING...</td></tr>';
+
+    try {
+        let query = supabase
+            .from('scans')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        // Filter by the current user ONLY
+        query = query.eq('scanned_by', currentUserFullName || currentUser || "Unknown Operator");
+
+        if (filter !== 'ALL') {
+            query = query.eq('result', filter);
+        }
+
+        if (dateFilter) {
+            const startOfDay = `${dateFilter}T00:00:00.000Z`;
+            const endOfDay = `${dateFilter}T23:59:59.999Z`;
+            query = query.gte('created_at', startOfDay).lte('created_at', endOfDay);
+        } else {
+            // Default limit if no date filter (performance)
+            query = query.limit(100);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            operatorHistoryTableBody.innerHTML = '<tr><td colspan="3" style="text-align:center">No records found</td></tr>';
+            return;
+        }
+
+        operatorHistoryTableBody.innerHTML = data.map(scan => {
+            const time = new Date(scan.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const badgeClass = scan.result === 'MATCH' ? 'badge-match' : 'badge-mismatch';
+            return `
+                <tr>
+                    <td>${time}</td>
+                    <td style="font-size: 0.65rem; opacity: 0.7;">
+                        C: ${truncate(scan.carton_barcode, 12)}<br>
+                        L: ${truncate(scan.label_barcode, 12)}
+                    </td>
+                    <td><span class="badge ${badgeClass}">${scan.result}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error("Fetch Operator Scans Error:", err);
+        operatorHistoryTableBody.innerHTML = '<tr><td colspan="3" style="color:var(--error)">Error loading data</td></tr>';
+    }
   }
 
   // ─── Start ─────────────────────────────────

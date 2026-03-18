@@ -401,6 +401,41 @@
           </div>
         </div>
       </main>
+
+      <!-- Operator History View -->
+      <main class="main-content" id="operatorHistoryView" style="display: none;">
+        <div class="panel glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 class="panel-title" style="margin-bottom: 0; border-bottom: none;">My Scan History</h3>
+                <button class="btn-micro" id="refreshOperatorHistoryBtn" onclick="fetchOperatorHistory()" style="display: flex; gap: 8px; align-items: center; height: 32px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="filters-row" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                <select id="filterOperatorHistoryResult" class="scan-input" onchange="fetchOperatorHistory()" style="padding: 10px; font-size: 0.8rem; height: 40px; flex: 2; min-width: 120px;">
+                    <option value="ALL">ALL RESULTS</option>
+                    <option value="MATCH">MATCH ONLY</option>
+                    <option value="MISMATCH">FAILURES ONLY</option>
+                </select>
+                <input type="date" id="filterOperatorHistoryDate" class="scan-input" onchange="fetchOperatorHistory()" style="padding: 10px; font-size: 0.8rem; height: 40px; flex: 2; min-width: 130px; color-scheme: dark;">
+            </div>
+            <div class="table-container">
+                <table id="operatorHistoryTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operatorHistoryTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+      </main>
     </div>
 
     <!-- Toast Container -->
@@ -518,6 +553,14 @@
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
         <span>Home</span>
+      </button>
+
+      <button class="nav-item" id="navOperatorHistoryBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>History</span>
       </button>
 
       <button class="nav-item hidden" id="navAdminBtn">
