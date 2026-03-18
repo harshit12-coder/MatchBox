@@ -18,7 +18,6 @@
   const scanCard2 = document.getElementById("scanCard2");
   const historyList = document.getElementById("historyList");
   const historyEmpty = document.getElementById("historyEmpty");
-  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
   const resultOverlay = document.getElementById("resultOverlay");
   const resultOverlayContent = document.getElementById("resultOverlayContent");
   const toastContainer = document.getElementById("toastContainer");
@@ -103,8 +102,9 @@
   let currentUserRole = localStorage.getItem("matchbox_operator_role") || "";
   let currentUserFullName = localStorage.getItem("matchbox_operator_name") || "";
   let authMode = "login"; // "login" or "signup"
+  
+  let currentAdminScansData = [];
 
-  // ─── Sound Engine ───────────────────────────
   const SoundEngine = {
     ctx: null,
     init() {
@@ -144,6 +144,36 @@
     click() { this.play(440, 'triangle', 0.05, 0.05); }
   };
 
+  async function fetchOperatorStats() {
+    try {
+      const userIdentifier = currentUserFullName || currentUser;
+      if (!userIdentifier) return;
+
+      const { count: total, error: e1 } = await supabase
+        .from('scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('scanned_by', userIdentifier);
+
+      const { count: pass, error: e2 } = await supabase
+        .from('scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('scanned_by', userIdentifier)
+        .eq('result', 'MATCH');
+
+      if (e1 || e2) throw (e1 || e2);
+
+      const fail = total - pass;
+      
+      stats = { total: total || 0, pass: pass || 0, fail: fail || 0 };
+      
+      renderStats();
+    } catch(err) {
+      console.error("Error fetching stats from DB:", err);
+      // Fallback to memory
+      renderStats();
+    }
+  }
+
   // ─── Init ──────────────────────────────────
   function init() {
     // Show login if not logged in
@@ -162,7 +192,7 @@
       }, 500);
     }
 
-    renderStats();
+    fetchOperatorStats(); 
     renderHistory();
     setupListeners();
 
@@ -440,17 +470,6 @@
     });
     scannerCloseBtn.addEventListener("click", closeScanner);
 
-    if (clearHistoryBtn) {
-      clearHistoryBtn.addEventListener("click", () => {
-        history = [];
-        stats = { total: 0, pass: 0, fail: 0 };
-        saveState();
-        renderHistory();
-        renderStats();
-        showToast("History cleared", "success");
-      });
-    }
-
     // Navigation Helper
 
     function switchNav(activeBtn) {
@@ -686,6 +705,9 @@
             cartonInput.focus();
             cartonInput.classList.add("view-fade-in");
         }
+        
+        // Fetch new operator's stats
+        fetchOperatorStats();
       }, 500);
 
     } catch (error) {
@@ -1292,6 +1314,8 @@
 
         const { data, error } = await query;
         if (error) throw error;
+        
+        currentAdminScansData = data || [];
 
         if (!data || data.length === 0) {
             adminScanTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center">No records found</td></tr>';
@@ -1381,22 +1405,36 @@
   }
 
   function exportCSV() {
-    const table = document.getElementById("adminScanTable");
-    let csv = "Time,Staff,Details,Status\n";
-    const rows = adminScanTableBody.querySelectorAll("tr");
+    if (!currentAdminScansData || currentAdminScansData.length === 0) {
+        showToast("No data to export", "warning");
+        return;
+    }
+
+    // Professional CSV Header
+    let csv = "Scan Date,Scan Time,Operator Name,Carton Barcode,Label Barcode,Validation Result\n";
     
-    rows.forEach(row => {
-        const cols = row.querySelectorAll("td");
-        if (cols.length === 4) {
-            const time = cols[0].innerText;
-            const staff = cols[1].innerText;
-            const details = cols[2].innerText.replace(/\n/g, ' | ');
-            const status = cols[3].innerText;
-            csv += `"${time}","${staff}","${details}","${status}"\n`;
-        }
+    currentAdminScansData.forEach(scan => {
+        const dateObj = new Date(scan.created_at);
+        const dateStr = dateObj.toLocaleDateString();
+        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const sanitize = (str) => {
+            if (!str) return "";
+            return str.replace(/"/g, '""');
+        };
+
+        const staff = sanitize(scan.scanned_by);
+        const carton = sanitize(scan.carton_barcode);
+        const label = sanitize(scan.label_barcode);
+        const status = scan.result;
+
+        // ="" prevents Excel from formatting barcodes as scientific numbers
+        csv += `"${dateStr}","${timeStr}","${staff}","=""${carton}""","=""${label}""","${status}"\n`;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    // Add BOM for proper UTF-8 handling in Excel and prevent weird characters
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
