@@ -968,7 +968,7 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
 
     // Regex Validation for Company Format - Case Insensitive
     // Format: ^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$
-    const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$/i;
+   const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6})$/;
     
     if (!companyRegex.test(cartonValue)) {
       shakeElement(scanCard1);
