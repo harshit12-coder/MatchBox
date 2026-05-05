@@ -84,6 +84,10 @@
   const SUPABASE_KEY = "sb_publishable_5zenHgExDRDkr6o20UVgOg_4mt7bV2z";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // ─── API Configuration ─────────────────────
+  // If your API is on a different domain, add it here (e.g., "https://api.yoursite.com")
+  const PACKING_SERVICE_BASE_URL = ""; 
+
   // ─── Scanner State ─────────────────────────
   let currentScanTarget = null;
   let cameraStream = null;
@@ -446,7 +450,7 @@
         scanCard2.classList.add("done");
 
         // Auto-validate logic:
-        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/i;
+        const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6})$/i;;
         if ((companyRegex.test(val) || val.length >= 14) && cartonInput.value.trim()) {
             // Small delay to ensure the field is fully populated before validation
             setTimeout(() => {
@@ -1001,6 +1005,10 @@
     saveState();
     renderStats();
     renderHistory();
+
+    // Trigger Packing Service API just before notifying the user
+    sendMatchStatusToPackingService(cartonValue, isMatch);
+
     showResult(isMatch, cartonValue, labelValue);
     showOverlay(isMatch);
     
@@ -1208,6 +1216,42 @@
       console.log("Scan synced to Supabase");
     } catch (err) {
       console.error("Supabase sync error:", err.message);
+    }
+  }
+
+  /**
+   * Triggers the Packing Service API to update carton match status
+   * @param {string} barCode - The barcode of the carton
+   * @param {boolean} isMatch - Whether the validation was successful
+   */
+  async function sendMatchStatusToPackingService(barCode, isMatch) {
+    try {
+      const endpoint = `${PACKING_SERVICE_BASE_URL}/api/v1/PackingService/CreateCartonMatchStatus`;
+      
+      const payload = {
+        barCode: barCode,
+        isMatch: isMatch
+      };
+
+      console.log("Triggering Packing Service API...", payload);
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Packing Service API Success:", result);
+    } catch (err) {
+      console.error("Packing Service API Error:", err);
+      // Silent fail to keep UX smooth, but logged for debugging
     }
   }
 
@@ -1524,4 +1568,4 @@
     });
   }
 
-})();
+})();
