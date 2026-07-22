@@ -86,7 +86,8 @@
 
   // ─── API Configuration ─────────────────────
   // If your API is on a different domain, add it here (e.g., "https://api.yoursite.com")
-  const PACKING_SERVICE_BASE_URL = ""; 
+  // Update this to your deployed proxy URL (Railway/Render)
+  const PACKING_SERVICE_BASE_URL = "https://your-proxy-app.railway.app"; 
 
   // ─── Scanner State ─────────────────────────
   let currentScanTarget = null;
@@ -429,7 +430,7 @@
         // Auto-transition logic:
         // 1. If it matches the specific company format
         // 2. OR if it reaches a typical barcode length (e.g., 10+ characters)
-        const companyRegex = /[A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6}/i;
+        const companyRegex = /^[A-Z]{2}(U1|U3|1P|3P|LT|HT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6}$/i;
         if (companyRegex.test(val) || val.length >= 14) {
             // Use a tiny timeout to ensure scanner has finished typing before moving
             setTimeout(() => {
@@ -459,7 +460,7 @@
         //         }
         //     }, 100);
         // }
-        const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6})$/;
+       const companyRegex = /^[A-Z]{2}(U1|U3|1P|3P|LT|HT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6}$/i;
 
 if (companyRegex.test(val) && cartonInput.value.trim()) {
     setTimeout(() => {
@@ -968,11 +969,11 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
 
     // Regex Validation for Company Format - Case Insensitive
     // Format: ^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB)[0-9][0-9][A-Z]\d{5,6})$
-   const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6})$/;
+  const companyRegex = /^([A-Z]{2}(U1|U3|1P|3P|LT|HT)(WO|WB|W0)[0-9][0-9][A-Z]\d{5,6})$/i;
     
     if (!companyRegex.test(cartonValue)) {
       shakeElement(scanCard1);
-      showResult(false, cartonValue, labelValue, "Format Error ⚠", "Carton barcode does not match company guidelines.");
+      showResult(false, cartonValue, labelValue, "Format Error ⚠", "Carton barcode does not match with the existing regex pattern.");
       showOverlay(false, "INVALID CARTON");
       SoundEngine.error();
       setTimeout(resetForm, 2200);
@@ -981,7 +982,7 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
     
     if (!companyRegex.test(labelValue)) {
       shakeElement(scanCard2);
-      showResult(false, cartonValue, labelValue, "Format Error ⚠", "Label barcode does not match company guidelines.");
+      showResult(false, cartonValue, labelValue, "Format Error ⚠", "Label barcode does not match with the existing regex pattern.");
       showOverlay(false, "INVALID LABEL");
       SoundEngine.error();
       setTimeout(resetForm, 2200);
@@ -995,6 +996,13 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
       normalizedCarton === normalizedLabel ||
       (normalizedCarton.length >= 3 && normalizedLabel.includes(normalizedCarton));
 
+    // 1. Show "Verifying..." status immediately to block UI
+    showOverlay(null, "VERIFYING...");
+
+    // 2. Perform API Call through Proxy
+    const apiSuccess = await sendMatchStatusToPackingService(cartonValue, isMatch);
+
+    // 3. Update Stats & History (Now that API responded)
     stats.total++;
     if (isMatch) {
       stats.pass++;
@@ -1015,9 +1023,7 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
     renderStats();
     renderHistory();
 
-    // Trigger Packing Service API just before notifying the user
-    sendMatchStatusToPackingService(cartonValue, isMatch);
-
+    // 4. Show Final Result on UI
     showResult(isMatch, cartonValue, labelValue);
     showOverlay(isMatch);
     
@@ -1066,7 +1072,24 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
 
   // ─── Show Overlay ──────────────────────────
   function showOverlay(isMatch, customTitle = null) {
-    resultOverlay.classList.remove("hidden", "success-overlay", "error-overlay");
+    resultOverlay.classList.remove("hidden", "success-overlay", "error-overlay", "loading-overlay");
+    
+    // Handle Loading State
+    if (isMatch === null) {
+      resultOverlay.classList.add("loading-overlay");
+      resultOverlayContent.innerHTML = `
+        <div class="loader-container">
+          <div class="loader-ring"></div>
+          <div class="loader-ring"></div>
+          <div class="loader-ring"></div>
+        </div>
+        <div class="overlay-text loading-text">
+          ${customTitle || "SYNCING..."}
+        </div>
+      `;
+      return; // Don't set timeout for loading overlay
+    }
+
     resultOverlay.classList.add(isMatch ? "success-overlay" : "error-overlay");
     
     const displayTitle = customTitle || (isMatch ? "MATCHED" : "REJECTED");
@@ -1097,7 +1120,7 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
         resultOverlayContent.style.animation = "overlayFadeOut 0.4s ease forwards";
         setTimeout(() => {
           resultOverlay.classList.add("hidden");
-          resultOverlay.classList.remove("success-overlay", "error-overlay");
+          resultOverlay.classList.remove("success-overlay", "error-overlay", "loading-overlay");
           resultOverlayContent.style.animation = "";
         }, 400);
       },
@@ -1235,14 +1258,15 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
    */
   async function sendMatchStatusToPackingService(barCode, isMatch) {
     try {
-      const endpoint = `${PACKING_SERVICE_BASE_URL}/api/v1/PackingService/CreateCartonMatchStatus`;
+      // Use the proxy endpoint defined in our Node.js server
+      const endpoint = `${PACKING_SERVICE_BASE_URL}/proxy/match-status`;
       
       const payload = {
         barCode: barCode,
         isMatch: isMatch
       };
 
-      console.log("Triggering Packing Service API...", payload);
+      console.log("Triggering Proxy API...", payload);
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -1258,9 +1282,11 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
 
       const result = await response.json();
       console.log("Packing Service API Success:", result);
+      return true; // Successfully posted
     } catch (err) {
       console.error("Packing Service API Error:", err);
-      // Silent fail to keep UX smooth, but logged for debugging
+      showToast("API Sync Failed, but record saved locally.", "warning");
+      return false; // Failed to post
     }
   }
 
@@ -1556,8 +1582,8 @@ if (companyRegex.test(val) && cartonInput.value.trim()) {
     }
   }
 
-  // ─── Start ─────────────────────────────────
-  init();
+  // ─── Entry Point ───
+  init();//It boots up the app and binds all event listeners
 
   async function fetchOperators() {
     const { data: profiles, error } = await supabase.from('profiles').select('*');
